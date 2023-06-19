@@ -81,6 +81,7 @@ static int editorReadKey();
 static int getCursorPosition(int *rows, int *cols);
 static int getWindowSize(int *rows, int *cols);
 static int editorRowCxToRx(erow *row, int cx);
+static int editorRowRxToCx(erow *row, int rx);
 static void editorUpdateRow(erow *row);
 static void editorInsertRow(int at, char *s, size_t len);
 static void editorFreeRow(erow *row);
@@ -94,6 +95,7 @@ static void editorDelChar();
 static char *editorRowsToString(int *buflen);
 static void editorOpen(char *filename);
 static int editorSave();
+static void editorFind();
 static void editorRefreshScreen();
 static void editorSetStatusMessage(const char* fmt, ...);
 static char *editorPrompt(char *prompt);
@@ -235,6 +237,18 @@ int editorRowCxToRx(erow *row, int cx) {
         rx++;
     }
     return rx;
+}
+
+int editorRowRxToCx(erow *row, int rx) {
+  int cur_rx = 0;
+  int cx;
+  for (cx = 0; cx < row->size; cx++) {
+    if (row->chars[cx] == '\t')
+      cur_rx += (KILO_TAB_STOP - 1) - (cur_rx % KILO_TAB_STOP);
+    cur_rx++;
+    if (cur_rx > rx) return cx;
+  }
+  return cx;
 }
 
 void editorUpdateRow(erow *row) {
@@ -430,6 +444,28 @@ int editorSave() {
     free(buf);
     editorSetStatusMessage("failed to save %s: %s", E.filename, strerror(errno));
     return -1;
+}
+
+//}}}
+// find {{{
+
+void editorFind() {
+    char *query = editorPrompt("Search: %s (ESC to cancel)");
+    if (query == NULL) return;
+
+    int i;
+    for (i = 0; i < E.numrows; i++) {
+        erow *row = &E.row[i];
+        char *match = strstr(row->render, query);
+        if (match) {
+            E.cy = i;
+            E.cx = match - row->render;
+            E.rowoff = E.numrows;
+            break;
+        }
+    }
+
+    free(query);
 }
 
 //}}}
