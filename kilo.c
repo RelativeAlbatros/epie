@@ -476,6 +476,7 @@ void editorProcessKeypress() {
             exit(0);
             break;
         case BACKSPACE:
+        case CTRL_KEY('h'):
         case DEL_KEY:
             // TODO
             break;
@@ -508,6 +509,9 @@ void editorProcessKeypress() {
             }
             break;
         }
+        case CTRL_KEY('l'):
+        case '\x1b':
+            break;
         default:
             editorInsertChar(c);
             break;
