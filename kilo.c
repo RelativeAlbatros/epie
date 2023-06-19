@@ -322,6 +322,16 @@ void editorDrawRows(struct abuf *ab) {
 
 }
 
+void editorDrawStatusBar(struct abuf *ab) {
+    abAppend(ab, "\x1b[7m", 4);
+    int len = 0;
+    while (len < E.screencols) {
+        abAppend(ab, " ", 1);
+        len++;
+    }
+    abAppend(ab, "\x1b[m", 3);
+}
+
 void editorRefreshScreen() {
     editorScroll();
 
@@ -331,6 +341,7 @@ void editorRefreshScreen() {
     abAppend(&ab, "\x1b[H", 3);
 
     editorDrawRows(&ab);
+    editorDrawStatusBar(&ab);
 
     /* return cursor to init position */
     char buf[32];
