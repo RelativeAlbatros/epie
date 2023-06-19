@@ -26,6 +26,7 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 enum editorKey {
+    BACKSPACE = 127,
     ARROW_LEFT = 1000,
     ARROW_RIGHT,
     ARROW_UP,
@@ -246,7 +247,7 @@ void editorInsertChar(int c) {
     if (E.cy == E.numrows) {
         editorAppendRow("", 0);
     }
-    editorRowInsertChar(&E.crow[E.cy], E.cx, c);
+    editorRowInsertChar(&E.row[E.cy], E.cx, c);
     E.cx++;
 }
 
@@ -465,11 +466,18 @@ void editorProcessKeypress() {
     int c = editorReadKey();
 
     switch (c) {
+        case '\r':
+            // TODO
+            break;
         case 'q':
         case CTRL_KEY('q'):
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
+            break;
+        case BACKSPACE:
+        case DEL_KEY:
+            // TODO
             break;
         case 'h':
         case 'j':
