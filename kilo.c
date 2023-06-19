@@ -58,6 +58,7 @@ struct editorConfig {
     int screencols;
     int numrows;
     erow *row;
+    int dirty;
     char *filename;
     char statusmsg[80];
     time_t statusmsg_time;
@@ -65,6 +66,29 @@ struct editorConfig {
 };
 
 struct editorConfig E;
+
+//}}}
+// prototypes {{{
+
+static void die(const char *s);
+static void disableRawMode();
+static void enableRawMode();
+static int editorReadKey();
+static int getCursorPosition(int *rows, int *cols);
+static int getWindowSize(int *rows, int *cols);
+static int editorRowCxToRx(erow *row, int cx);
+static void editorUpdateRow(erow *row);
+static void editorAppendRow(char *s, size_t len);
+static void editorRowInsertChar(erow *row, int at, int c);
+static void editorInsertChar(int c);
+static char *editorRowsToString(int *buflen);
+static void editorOpen(char *filename);
+static int editorSave();
+static void editorRefreshScreen();
+static void editorSetStatusMessage(const char* fmt, ...);
+static void editorMoveCursor(int key);
+static void editorProcessKeypress();
+static void initEditor();
 
 //}}}
 
@@ -301,10 +325,14 @@ int editorSave() {
     char *buf = editorRowsToString(&len);
 
     int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
-    ftruncate(fd, len);
-    write(fd, buf, len);
+    if (fd == -1) return -1;
+    if (ftruncate(fd, len) == -1) return -1;
+    if (write(fd, buf, len) == -1) return -1;
+
     close(fd);
     free(buf);
+
+    return 0;
 }
 
 //}}}
@@ -502,17 +530,28 @@ void editorProcessKeypress() {
         case '\r':
             // TODO
             break;
+
         case 'q':
         case CTRL_KEY('q'):
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
             break;
+
+        case CTRL_KEY('s'):
+            if (!editorSave()) {
+                editorSetStatusMessage("\"%s\", %dLoC Written", E.filename, E.screencols);
+            } else {
+                editorSetStatusMessage("failed to save %s.", E.filename);
+            }
+            break;
+
         case BACKSPACE:
         case CTRL_KEY('h'):
         case DEL_KEY:
             // TODO
             break;
+
         case 'h':
         case 'j':
         case 'k':
@@ -523,6 +562,7 @@ void editorProcessKeypress() {
         case ARROW_RIGHT:
             editorMoveCursor(c);
             break;
+
         case HOME_KEY: E.cx = 0; break;
         case END_KEY: 
             if (E.cy < E.numrows)
@@ -542,9 +582,11 @@ void editorProcessKeypress() {
             }
             break;
         }
+
         case CTRL_KEY('l'):
         case '\x1b':
             break;
+
         default:
             editorInsertChar(c);
             break;
@@ -563,6 +605,7 @@ void initEditor() {
     E.coloff = 0;
     E.numrows = 0;
     E.row = NULL;
+    E.dirty = 0;
     E.filename = NULL;
     E.statusmsg[0] = '\0';
     E.statusmsg_time = 0;
@@ -581,7 +624,7 @@ int main(int argc, char *argv[]) {
         editorOpen(argv[1]);
     }
 
-    editorSetStatusMessage("HELP: Ctrl-Q: Quit");
+    editorSetStatusMessage("HELP: Ctrl-Q: Quit | Ctrl-S: Save");
 
     while (1) {
         editorRefreshScreen();
