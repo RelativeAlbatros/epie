@@ -86,12 +86,14 @@ static void editorRowInsertChar(erow *row, int at, int c);
 static void editorRowAppendString(erow *row, char *s, size_t len);
 static void editorRowDelChar(erow *row, int at);
 static void editorInsertChar(int c);
+static void editorInsertNewLine();
 static void editorDelChar();
 static char *editorRowsToString(int *buflen);
 static void editorOpen(char *filename);
 static int editorSave();
 static void editorRefreshScreen();
 static void editorSetStatusMessage(const char* fmt, ...);
+static char *editorPrompt(char *prompt);
 static void editorMoveCursor(int key);
 static void editorProcessKeypress();
 static void initEditor();
@@ -316,6 +318,21 @@ void editorInsertChar(int c) {
     E.cx++;
 }
 
+void editorInsertNewLine() {
+    if (E.cx == 0) {
+        editorInsertRow(E.cy, "", 0);
+    } else {
+        erow *row = &E.row[E.cy];
+        editorInsertRow(E.cy+1, &row->chars[E.cx], row->size - E.cx);
+        row = &E.row[E.cy];
+        row->size = E.cx;
+        row->chars[row->size] = '\0';
+        editorUpdateRow(row);
+    }
+    E.cy++;
+    E.cx = 0;
+}
+
 void editorDelChar() {
     if (E.cy == E.numrows) return;
     if (E.cx == 0 && E.cy == 0) return;
@@ -376,7 +393,9 @@ void editorOpen(char *filename) {
 }
 
 int editorSave() {
-    if (E.filename == NULL) return -1;
+    if (E.filename == NULL) {
+        E.filename = editorPrompt("Save as: %s");
+    }
 
     int len;
     char *buf = editorRowsToString(&len);
@@ -547,6 +566,38 @@ void editorSetStatusMessage(const char *fmt, ...) {
 //}}}
 // input {{{
 
+char *editorPrompt(char *prompt) {
+    size_t bufsize = 128;
+    char *buf = malloc(bufsize);
+
+    size_t buflen = 0;
+    buf[0] = '\0';
+
+    while (1) {
+        editorSetStatusMessage(prompt, buf);
+        editorRefreshScreen();
+
+        int c = editorReadKey();
+        if (c == '\x1b'){
+            editorSetStatusMessage("");
+            free(buf);
+            return NULL;
+        } else if (c == '\r') {
+            if (buflen != 0) {
+                editorSetStatusMessage("");
+                return buf;
+            }
+        } else if (!iscntrl(c) && c < 128) {
+            if (buflen == bufsize - 1) {
+                bufsize *= 2;
+                buf = realloc(buf, bufsize);
+            }
+            buf[buflen++] = c;
+            buf[buflen] = '\0';
+        }
+    }
+}
+
 void editorMoveCursor(int key) {
     erow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
 
@@ -597,7 +648,7 @@ void editorProcessKeypress() {
 
     switch (c) {
         case '\r':
-            // TODO
+            editorInsertNewLine();
             break;
 
         case 'q':
