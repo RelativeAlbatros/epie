@@ -80,7 +80,10 @@ static int getWindowSize(int *rows, int *cols);
 static int editorRowCxToRx(erow *row, int cx);
 static void editorUpdateRow(erow *row);
 static void editorAppendRow(char *s, size_t len);
+static void editorFreeRow(erow *row);
+static void editorDelRow(int at);
 static void editorRowInsertChar(erow *row, int at, int c);
+static void editorRowAppendString(erow *row, char *s, size_t len);
 static void editorRowDelChar(erow *row, int at);
 static void editorInsertChar(int c);
 static void editorDelChar();
@@ -282,6 +285,15 @@ void editorRowInsertChar(erow *row, int at, int c) {
     editorUpdateRow(row);
     E.dirty++;
 }
+
+void editorRowAppendString(erow *row, char *s, size_t len) {
+    row->chars = realloc(row->chars, row->size + len + 1);
+    memcpy(&row->chars[row->size], s, len);
+    row->size += len;
+    row->chars[row->size] = '\0';
+    editorUpdateRow(row);
+    E.dirty++;
+} 
 
 void editorRowDelChar(erow *row, int at) {
     if (at < 0 || at >= row->size) return;
