@@ -394,7 +394,10 @@ void editorOpen(char *filename) {
 
 int editorSave() {
     if (E.filename == NULL) {
-        E.filename = editorPrompt("Save as: %s");
+        if ((E.filename = editorPrompt("Save as: %s")) == NULL) {
+            editorSetStatusMessage("Save aborted.");
+            return -1;
+        }
     }
 
     int len;
