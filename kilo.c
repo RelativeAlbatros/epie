@@ -21,6 +21,7 @@
 
 #define KILO_VERSION "0.0.1"
 #define KILO_TAB_STOP 4
+#define MESSAGE_TIMEOUT  5
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -352,6 +353,14 @@ void editorDrawStatusBar(struct abuf *ab) {
     abAppend(ab, "\r\n", 2);
 }
 
+void editorDrawMessageBar(struct abuf *ab) {
+    abAppend(ab, "\x1b[K", 3);
+    int msglen = strlen(E.statusmsg);
+    if (msglen > E.screencols) msglen = E.screencols;
+    if (msglen && time(NULL) - E.statusmsg_time < MESSAGE_TIMEOUT)
+        abAppend(ab, E.statusmsg, msglen);
+}
+
 void editorRefreshScreen() {
     editorScroll();
 
@@ -362,6 +371,7 @@ void editorRefreshScreen() {
 
     editorDrawRows(&ab);
     editorDrawStatusBar(&ab);
+    editorDrawMessageBar(&ab);
 
     /* return cursor to init position */
     char buf[32];
