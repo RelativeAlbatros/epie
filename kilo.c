@@ -420,7 +420,7 @@ void editorProcessKeypress() {
                 E.cy = E.rowoff;
             } else if (c == PAGE_DOWN) {
                 E.cy = E.rowoff + E.screenrows - 1;
-                if (E.c) {} 
+                if (E.cy > E.numrows) E.cy = E.numrows;
             } 
             
             int times = E.screenrows;
