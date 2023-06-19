@@ -254,6 +254,7 @@ void editorAppendRow(char *s, size_t len) {
     editorUpdateRow(&E.row[at]);
 
     E.numrows++;
+    E.dirty++;
 }
 
 void editorRowInsertChar(erow *row, int at, int c) {
@@ -263,6 +264,7 @@ void editorRowInsertChar(erow *row, int at, int c) {
     row->size++;
     row->chars[at]=c;
     editorUpdateRow(row);
+    E.dirty++;
 }
 
 //}}}
@@ -316,6 +318,7 @@ void editorOpen(char *filename) {
     }
     free(line);
     fclose(fp);
+    E.dirty = 0;
 }
 
 int editorSave() {
@@ -331,6 +334,7 @@ int editorSave() {
 
     close(fd);
     free(buf);
+    E.dirty = 0;
 
     return 0;
 }
@@ -418,9 +422,9 @@ void editorDrawRows(struct abuf *ab) {
 void editorDrawStatusBar(struct abuf *ab) {
     abAppend(ab, "\x1b[7m", 4);
     char status[80], rstatus[80];
-    int len = snprintf(status, sizeof(status), "%.20s %s- %d",
+    int len = snprintf(status, sizeof(status), "%.20s%s- %d",
             E.filename ? E.filename : "[No Name]", 
-            E.dirty ? "[+]" : "",
+            E.dirty ? " [+] " : " ",
             E.numrows);
     int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
             E.cy + 1, E.numrows);
