@@ -81,8 +81,9 @@ static int editorRowCxToRx(erow *row, int cx);
 static void editorUpdateRow(erow *row);
 static void editorAppendRow(char *s, size_t len);
 static void editorRowInsertChar(erow *row, int at, int c);
-void editorRowDelChar(erow *row, int at);
+static void editorRowDelChar(erow *row, int at);
 static void editorInsertChar(int c);
+static void editorDelChar();
 static char *editorRowsToString(int *buflen);
 static void editorOpen(char *filename);
 static int editorSave();
@@ -286,6 +287,16 @@ void editorInsertChar(int c) {
     }
     editorRowInsertChar(&E.row[E.cy], E.cx, c);
     E.cx++;
+}
+
+void editorDelChar() {
+    if (E.cy == E.numrows) return;
+
+    erow *row = &E.row[E.cy];
+    if (E.cx > 0) {
+        editorRowDelChar(row, E.cx - 1);
+        E.cx--;
+    }
 }
 
 //}}}
