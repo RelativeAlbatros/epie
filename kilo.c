@@ -59,8 +59,8 @@ struct editorConfig {
 struct editorConfig E;
 
 //}}}
- 
-// terminal {{{
+
+ // terminal {{{
 
 void die(const char *s) {
     write(STDOUT_FILENO, "\x1b[2J", 4);
@@ -413,10 +413,18 @@ void editorProcessKeypress() {
             editorMoveCursor(c);
             break;
         case HOME_KEY: E.cx = 0; break;
-        case END_KEY: E.cx = E.screencols - 1; break;
+        case END_KEY: 
+            if (E.cy < E.numrows)
+                E.cx = E.row[E.cy].size;
         case PAGE_UP:
-        case PAGE_DOWN:
-        {
+        case PAGE_DOWN: {
+            if (c == PAGE_UP) {
+                E.cy = E.rowoff;
+            } else if (c == PAGE_DOWN) {
+                E.cy = E.rowoff + E.screenrows - 1;
+                if (E.c) {} 
+            } 
+            
             int times = E.screenrows;
             while (times--) {
                 editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
