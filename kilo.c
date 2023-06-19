@@ -22,7 +22,8 @@
 
 #define KILO_VERSION "0.0.1"
 #define KILO_TAB_STOP 4
-#define MESSAGE_TIMEOUT  5
+#define KILO_MESSAGE_TIMEOUT  5
+#define KILO_QUIT_TIMES 3
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -334,7 +335,7 @@ int editorSave() {
                 close(fd);
                 free(buf);
                 E.dirty = 0;
-                editorSetStatusMessage("\"%s\" %dL, %dB Written", E.filename, E.screencols, len);
+                editorSetStatusMessage("\"%s\", %dL, %dB Written", E.filename, E.screencols, len);
                 return 0;
             }
         }
@@ -454,7 +455,7 @@ void editorDrawMessageBar(struct abuf *ab) {
     abAppend(ab, "\x1b[K", 3);
     int msglen = strlen(E.statusmsg);
     if (msglen > E.screencols) msglen = E.screencols;
-    if (msglen && time(NULL) - E.statusmsg_time < MESSAGE_TIMEOUT)
+    if (msglen && time(NULL) - E.statusmsg_time < KILO_MESSAGE_TIMEOUT)
         abAppend(ab, E.statusmsg, msglen);
 }
 
@@ -537,6 +538,8 @@ void editorMoveCursor(int key) {
 }
 
 void editorProcessKeypress() {
+    static int quit_times = KILO_QUIT_TIMES;
+
     int c = editorReadKey();
 
     switch (c) {
@@ -546,6 +549,11 @@ void editorProcessKeypress() {
 
         case 'q':
         case CTRL_KEY('q'):
+            if (E.dirty && quit_times > 0) {
+                editorSetStatusMessage("Error: no write since last change, press Ctrl-Q %d more times to quit.", quit_times);
+                quit_times--;
+                return;
+            }
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
@@ -600,6 +608,7 @@ void editorProcessKeypress() {
             editorInsertChar(c);
             break;
     }
+    quit_times = KILO_QUIT_TIMES;
 }
 
 //}}}
