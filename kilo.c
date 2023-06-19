@@ -60,6 +60,8 @@ struct editorConfig {
     int numrows;
     erow *row;
     int dirty;
+    // 0: normal, 1: input, 2: command
+    int mode;
     char *filename;
     char statusmsg[80];
     time_t statusmsg_time;
@@ -71,6 +73,7 @@ struct editorConfig E;
 //}}}
 // prototypes {{{
 
+static void quit();
 static void die(const char *s);
 static void disableRawMode();
 static void enableRawMode();
@@ -101,6 +104,13 @@ static void initEditor();
 //}}}
 
 // terminal {{{
+
+void quit() {
+    disableRawMode();
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
+    exit(0);
+}
 
 void die(const char *s) {
     write(STDOUT_FILENO, "\x1b[2J", 4);
@@ -410,7 +420,7 @@ int editorSave() {
                 close(fd);
                 free(buf);
                 E.dirty = 0;
-                editorSetStatusMessage("\"%s\", %dL, %dB Written", E.filename, E.screencols, len);
+                editorSetStatusMessage("\"%s\" %dL, %dB Written", E.filename, E.screencols, len);
                 return 0;
             }
         }
@@ -651,73 +661,96 @@ void editorProcessKeypress() {
 
     int c = editorReadKey();
 
-    switch (c) {
-        case '\r':
-            editorInsertNewLine();
-            break;
+    if (E.mode == 0) {
+        switch (c) {
+            case '\r':
+                editorMoveCursor(ARROW_DOWN);
+                break;
 
-        case 'q':
-        case CTRL_KEY('q'):
-            if (E.dirty && quit_times > 0) {
-                editorSetStatusMessage("Error: no write since last change, press Ctrl-Q %d more times to quit.", quit_times);
-                quit_times--;
+            case CTRL_KEY('q'):
+                if (E.dirty && quit_times > 0) {
+                    editorSetStatusMessage("Error: no write since last change, press Ctrl-Q %d more times to quit.", quit_times);
+                    quit_times--;
+                quit();
                 return;
-            }
-            write(STDOUT_FILENO, "\x1b[2J", 4);
-            write(STDOUT_FILENO, "\x1b[H", 3);
-            exit(0);
-            break;
-
-        case CTRL_KEY('s'):
-            editorSave();
-            break;
-
-        case BACKSPACE:
-        case CTRL_KEY('h'):
-        case DEL_KEY:
-            if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
-            editorDelChar();
-            break;
-
-        case 'h':
-        case 'j':
-        case 'k':
-        case 'l':
-        case ARROW_LEFT:
-        case ARROW_DOWN:
-        case ARROW_UP:
-        case ARROW_RIGHT:
-            editorMoveCursor(c);
-            break;
-
-        case HOME_KEY: E.cx = 0; break;
-        case END_KEY: 
-            if (E.cy < E.numrows)
-                E.cx = E.row[E.cy].size;
-        case PAGE_UP:
-        case PAGE_DOWN: {
-            if (c == PAGE_UP) {
-                E.cy = E.rowoff;
-            } else if (c == PAGE_DOWN) {
-                E.cy = E.rowoff + E.screenrows - 1;
-                if (E.cy > E.numrows) E.cy = E.numrows;
-            } 
-            
-            int times = E.screenrows;
-            while (times--) {
-                editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
-            }
-            break;
-        }
-
-        case CTRL_KEY('l'):
-        case '\x1b':
-            break;
-
-        default:
-            editorInsertChar(c);
-            break;
     }
+                quit(quit_times);
+                break;
+
+            case 'i':
+                E.mode = 1;
+                break;
+
+
+            case CTRL_KEY('s'):
+                editorSave();
+                break;
+
+            case BACKSPACE:
+            case CTRL_KEY('h'):
+            case DEL_KEY:
+                if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+                editorDelChar();
+                break;
+
+            case 'h':
+            case 'j':
+            case 'k':
+            case 'l':
+            case ARROW_LEFT:
+            case ARROW_DOWN:
+            case ARROW_UP:
+            case ARROW_RIGHT:
+                editorMoveCursor(c);
+                break;
+
+            case 'g': E.cy = 0; break;
+            case 'G': E.cy = E.numrows; break;
+
+            case HOME_KEY: E.cx = 0; break;
+            case END_KEY: 
+                if (E.cy < E.numrows)
+                    E.cx = E.row[E.cy].size;
+            case PAGE_UP:
+            case PAGE_DOWN: {
+                if (c == PAGE_UP) {
+                    E.cy = E.rowoff;
+                } else if (c == PAGE_DOWN) {
+                    E.cy = E.rowoff + E.screenrows - 1;
+                    if (E.cy > E.numrows) E.cy = E.numrows;
+                } 
+                
+                int times = E.screenrows;
+                while (times--) {
+                    editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+                }
+                break;
+            }
+
+            case CTRL_KEY('l'):
+            case '\x1b':
+                break;
+
+            default:
+                break;
+        }
+    } else if (E.mode == 1) {
+        switch (c) {
+            case CTRL_KEY('l'):
+            case '\x1b':
+                E.mode = 0;
+                break;
+
+            case '\r':
+                editorInsertNewLine();
+                break;
+
+            default:
+                editorInsertChar(c);
+                break;
+        }
+    }
+
     quit_times = KILO_QUIT_TIMES;
 }
 
@@ -734,6 +767,7 @@ void initEditor() {
     E.numrows = 0;
     E.row = NULL;
     E.dirty = 0;
+    E.mode = 0;
     E.filename = NULL;
     E.statusmsg[0] = '\0';
     E.statusmsg_time = 0;
@@ -759,7 +793,7 @@ int main(int argc, char *argv[]) {
         editorProcessKeypress();
     }
 
-  return 0;
+    quit();
 }
 //}}}
 
