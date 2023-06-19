@@ -713,6 +713,10 @@ void editorProcessKeypress() {
                 quit(quit_times);
                 break;
 
+            case CTRL_KEY('f'):
+                editorFind();
+                break;
+
             case 'i':
                 E.mode = 1;
                 break;
@@ -822,7 +826,7 @@ int main(int argc, char *argv[]) {
         editorOpen(argv[1]);
     }
 
-    editorSetStatusMessage("HELP: Ctrl-Q: Quit | Ctrl-S: Save");
+    editorSetStatusMessage("HELP: Ctrl-Q: Quit | Ctrl-S: Save | Ctrl-F: Find");
 
     while (1) {
         editorRefreshScreen();
