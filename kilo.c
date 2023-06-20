@@ -16,7 +16,7 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
-
+// maison grande et trop cool
 //}}}
 // defines {{{
 
@@ -24,6 +24,7 @@
 #define KILO_TAB_STOP 4
 #define KILO_MESSAGE_TIMEOUT  5
 #define KILO_QUIT_TIMES 3
+#define KILO_SEPARATOR " | "
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -98,7 +99,7 @@ static int editorSave();
 static void editorFind();
 static void editorRefreshScreen();
 static void editorSetStatusMessage(const char* fmt, ...);
-static char *editorPrompt(char *prompt);
+static char *editorPrompt(char *prompt, void (*callback)(char *, int));
 static void editorMoveCursor(int key);
 static void editorProcessKeypress();
 static void initEditor();
@@ -418,7 +419,7 @@ void editorOpen(char *filename) {
 
 int editorSave() {
     if (E.filename == NULL) {
-        if ((E.filename = editorPrompt("Save as: %s")) == NULL) {
+        if ((E.filename = editorPrompt("Save as: %s", NULL)) == NULL) {
             editorSetStatusMessage("Save aborted.");
             return -1;
         }
@@ -450,7 +451,7 @@ int editorSave() {
 // find {{{
 
 void editorFind() {
-    char *query = editorPrompt("Search: %s (ESC to cancel)");
+    char *query = editorPrompt("Search: %s (ESC to cancel)", NULL);
     if (query == NULL) return;
 
     int i;
@@ -551,7 +552,12 @@ void editorDrawRows(struct abuf *ab) {
 void editorDrawStatusBar(struct abuf *ab) {
     abAppend(ab, "\x1b[7m", 4);
     char status[80], rstatus[80];
-    int len = snprintf(status, sizeof(status), "%.20s%s- %d",
+    char *e_mode;
+    if (E.mode == 0) e_mode = "NORMAL";
+    else if (E.mode == 1) e_mode = "INSERT";
+    else if (E.mode == 2) e_mode = "COMMAND";
+    int len = snprintf(status, sizeof(status), "%s%3s%.20s%s- %d",
+            e_mode , KILO_SEPARATOR,
             E.filename ? E.filename : "[No Name]", 
             E.dirty ? " [+] " : " ",
             E.numrows);
@@ -615,7 +621,7 @@ void editorSetStatusMessage(const char *fmt, ...) {
 //}}}
 // input {{{
 
-char *editorPrompt(char *prompt) {
+char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
     size_t bufsize = 128;
     char *buf = malloc(bufsize);
 
@@ -631,11 +637,13 @@ char *editorPrompt(char *prompt) {
             if(buflen != 0) buf[--buflen] = '\0';
         }else if (c == '\x1b'){
             editorSetStatusMessage("");
+            if (callback) callback(buf, c);
             free(buf);
             return NULL;
         } else if (c == '\r') {
             if (buflen != 0) {
                 editorSetStatusMessage("");
+                if (callback) callback(buf, c);
                 return buf;
             }
         } else if (!iscntrl(c) && c < 128) {
@@ -646,6 +654,7 @@ char *editorPrompt(char *prompt) {
             buf[buflen++] = c;
             buf[buflen] = '\0';
         }
+        if (callback) callback(buf, c);
     }
 }
 
@@ -716,6 +725,10 @@ void editorProcessKeypress() {
             case CTRL_KEY('f'):
                 editorFind();
                 break;
+			case 'a':
+				E.cx += 1;
+				E.mode = 1;
+				break;
 
             case 'i':
                 E.mode = 1;
@@ -780,13 +793,20 @@ void editorProcessKeypress() {
             case '\x1b':
                 E.mode = 0;
                 break;
+			
+			case DEL_KEY:
+			case BACKSPACE:
+				if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+				editorDelChar();
+				break;
 
             case '\r':
                 editorInsertNewLine();
                 break;
 
             default:
-                editorInsertChar(c);
+                if (c > 31 && c < 127)
+                    editorInsertChar(c);
                 break;
         }
     }
