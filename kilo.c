@@ -751,15 +751,15 @@ void editorProcessKeypress() {
                 if (E.dirty && quit_times > 0) {
                     editorSetStatusMessage("Error: no write since last change, press Ctrl-Q %d more times to quit.", quit_times);
                     quit_times--;
-                quit();
                 return;
-    }
-                quit(quit_times);
+                }
+                quit();
                 break;
 
-            case CTRL_KEY('f'):
+            case '/':
                 editorFind();
                 break;
+
 			case 'a':
 				E.cx += 1;
 				E.mode = 1;
