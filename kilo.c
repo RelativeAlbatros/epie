@@ -61,7 +61,7 @@ struct editorConfig {
     int numrows;
     erow *row;
     int dirty;
-    // 0: normal, 1: input, 2: command
+    // 0: normal, 1: input, 2: command, 3: search
     int mode;
     char *filename;
     char statusmsg[80];
@@ -492,8 +492,10 @@ void editorFind() {
     int saved_cy = E.cy;
     int saved_coloff = E.coloff; 
     int saved_rowoff = E.rowoff;
+    int saved_mode = E.mode;
 
-    char *query = editorPrompt("Search: %s (ESC to cancel)", editorFindCallback);
+    E.mode = 3;
+    char *query = editorPrompt("/%s", editorFindCallback);
     if (query) {
         free(query);
     } else {
@@ -502,6 +504,7 @@ void editorFind() {
         E.coloff = saved_coloff;
         E.rowoff = saved_rowoff;
     }
+    E.mode = saved_mode;
 }
 
 //}}}
@@ -591,7 +594,8 @@ void editorDrawStatusBar(struct abuf *ab) {
     if (E.mode == 0) e_mode = "NORMAL";
     else if (E.mode == 1) e_mode = "INSERT";
     else if (E.mode == 2) e_mode = "COMMAND";
-    int len = snprintf(status, sizeof(status), "%s%3s%.20s%s- %d",
+    else if (E.mode == 3) e_mode = "SEARCH";
+    int len = snprintf(status, sizeof(status), " %s%3s%.20s%s- %d",
             e_mode , KILO_SEPARATOR,
             E.filename ? E.filename : "[No Name]", 
             E.dirty ? " [+] " : " ",
@@ -743,10 +747,6 @@ void editorProcessKeypress() {
 
     if (E.mode == 0) {
         switch (c) {
-            case '\r':
-                editorMoveCursor(ARROW_DOWN);
-                break;
-
             case CTRL_KEY('q'):
                 if (E.dirty && quit_times > 0) {
                     editorSetStatusMessage("Error: no write since last change, press Ctrl-Q %d more times to quit.", quit_times);
@@ -756,8 +756,21 @@ void editorProcessKeypress() {
                 quit();
                 break;
 
+            case CTRL_KEY('s'):
+                editorSave();
+                break;
+
             case '/':
                 editorFind();
+                break;
+
+            case 'i':
+                E.mode = 1;
+                break;
+
+            case 'I':
+                E.cx = 0;
+                E.mode = 1;
                 break;
 
 			case 'a':
@@ -765,20 +778,39 @@ void editorProcessKeypress() {
 				E.mode = 1;
 				break;
 
-            case 'i':
+            case 'A':
+				E.cx = E.row[E.cy].size;
                 E.mode = 1;
                 break;
 
+            case 'o':
+                editorInsertRow(E.cy + 1, "", 0);
+                editorMoveCursor(ARROW_DOWN);
+                E.cx = 0;
+                E.mode = 1;
+                break;
 
-            case CTRL_KEY('s'):
-                editorSave();
+            case 'O':
+                editorInsertRow(E.cy, "", 0);
+                E.cx = 0;
+                E.mode = 1;
+                break;
+
+            case 'x':
+                editorRowDelChar(&E.row[E.cy], E.cx);
                 break;
 
             case BACKSPACE:
+                editorMoveCursor(ARROW_RIGHT);
+                break;
+
             case CTRL_KEY('h'):
             case DEL_KEY:
-                if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
                 editorDelChar();
+                break;
+
+            case '\r':
+                editorMoveCursor(ARROW_DOWN);
                 break;
 
             case 'h':
@@ -826,9 +858,19 @@ void editorProcessKeypress() {
         switch (c) {
             case CTRL_KEY('l'):
             case '\x1b':
+                editorMoveCursor(ARROW_LEFT);
                 E.mode = 0;
                 break;
 			
+            case CTRL_KEY('q'):
+                if (E.dirty && quit_times > 0) {
+                    editorSetStatusMessage("Error: no write since last change, press Ctrl-Q %d more times to quit.", quit_times);
+                    quit_times--;
+                return;
+                }
+                quit();
+                break;
+
 			case DEL_KEY:
 			case BACKSPACE:
 				if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
@@ -840,7 +882,7 @@ void editorProcessKeypress() {
                 break;
 
             default:
-                if (c > 31 && c < 127)
+                if ((c > 31 && c < 127) || c == 9)
                     editorInsertChar(c);
                 break;
         }
