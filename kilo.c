@@ -91,7 +91,7 @@ struct editorConfig E;
 
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 
-struct editorSyntax HLDB[] {
+struct editorSyntax HLDB[] = {
     {
         "c",
         C_HL_extensions,
@@ -717,12 +717,13 @@ void editorDrawStatusBar(struct abuf *ab) {
     else if (E.mode == 1) e_mode = "INSERT";
     else if (E.mode == 2) e_mode = "COMMAND";
     else if (E.mode == 3) e_mode = "SEARCH";
-    int len = snprintf(status, sizeof(status), " %s%3s%.20s%s- %d",
+    int len = snprintf(status, sizeof(status), " %s%s%.20s%s- %d",
             e_mode , KILO_SEPARATOR,
             E.filename ? E.filename : "[No Name]", 
             E.dirty ? " [+] " : " ",
             E.numrows);
-    int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
+    int rlen = snprintf(rstatus, sizeof(rstatus), "%s%s%d/%d",
+            E.syntax ? E.syntax->filetype : "no ft", KILO_SEPARATOR,
             E.cy + 1, E.numrows);
     if (len > E.screencols) len = E.screencols;
     abAppend(ab, status, len);
