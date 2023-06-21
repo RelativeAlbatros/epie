@@ -512,6 +512,8 @@ void editorOpen(char *filename) {
     free(E.filename);
     E.filename = strdup(filename);
 
+    editorSelectSyntaxHighlight();
+
     FILE *fp = fopen(filename, "r");
     if (!fp) die("fopen");
 
@@ -535,6 +537,7 @@ int editorSave() {
             editorSetStatusMessage("Save aborted.");
             return -1;
         }
+        editorSelectSyntaxHighlight();
     }
 
     int len;
