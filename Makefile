@@ -19,6 +19,7 @@ install: all
 	@mkdir -p ${DESTDIR}${PREFIX}/bin
 	@cp kilo ${DESTDIR}${PREFIX}/bin
 	@chmod 755 ${DESTDIR}${PREFIX}/bin/kilo
+	@cp kilo.1 /usr/local/share/man/man1/kilo.1
 	@echo "installed kilo in ${DESTDIR}${PREFIX}/bin"
 
 uninstall:

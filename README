@@ -1,0 +1,16 @@
+# kilo
+
+kilo is a terminal text editor similar to vi written from scratch in **C**.
+
+## usage
+
+read the man page.
+
+## install
+
+    make
+    sudo make clean install
+
+## License
+
+The kilo source code is released under the BSD 2-Clause license.
