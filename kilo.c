@@ -44,6 +44,7 @@ enum editorKey {
 enum editorHighlight {
 	HL_NORMAL = 0,
 	HL_COMMENT,
+	HL_FUNCTION,
 	HL_STRING,
 	HL_NUMBER,
 	HL_MATCH
@@ -51,6 +52,7 @@ enum editorHighlight {
 
 #define HL_HIGHLIGHT_NUMBERS (1<<0)
 #define HL_HIGHLIGHT_STRINGS (1<<1)
+#define HL_HIGHLIGHT_FUNCTIONS (1<<2)
 
 //}}}
 // data {{{
@@ -100,7 +102,7 @@ struct editorSyntax HLDB[] = {
 		"c",
 		C_HL_extensions,
 		"//",
-		HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
+		HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_FUNCTIONS
 	},
 };
 
@@ -297,6 +299,14 @@ void editorUpdateSyntax(erow *row) {
 		char c = row->render[i];
 		unsigned char prev_hl = (i>0) ? row->hl[i-1] : HL_NORMAL;
 
+		if (E.syntax->flags && HL_HIGHLIGHT_FUNCTIONS) {
+			if (in_string && row->render[i+1] == '(') {
+				for (int j = i; row->render[j] != ' '; j--) {
+					row->hl[j] = HL_FUNCTION;
+				}
+			}
+		}
+
 		if (scs_len && !in_string) {
 			if (!strncmp(&row->render[i], scs, scs_len)) {
 				memset(&row->hl[i], HL_COMMENT, row->rsize - i);
@@ -342,6 +352,7 @@ void editorUpdateSyntax(erow *row) {
 
 int editorSyntaxToColor(int hl) {
 	switch (hl) {
+		case HL_FUNCTION: return 32;
 		case HL_COMMENT: return 90;
 		case HL_STRING: return 33;
 		case HL_NUMBER: return 35;
