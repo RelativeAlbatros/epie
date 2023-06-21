@@ -81,6 +81,7 @@ struct editorConfig E;
 //}}}
 // prototypes {{{
 
+// terminal
 static void quit();
 static void die(const char *s);
 static void disableRawMode();
@@ -88,6 +89,10 @@ static void enableRawMode();
 static int editorReadKey();
 static int getCursorPosition(int *rows, int *cols);
 static int getWindowSize(int *rows, int *cols);
+// syntax highlight
+static void editorUpdateSyntax(erow *row);
+static int editorSyntaxToColor(int hl);
+// row operations
 static int editorRowCxToRx(erow *row, int cx);
 static int editorRowRxToCx(erow *row, int rx);
 static void editorUpdateRow(erow *row);
@@ -97,18 +102,26 @@ static void editorDelRow(int at);
 static void editorRowInsertChar(erow *row, int at, int c);
 static void editorRowAppendString(erow *row, char *s, size_t len);
 static void editorRowDelChar(erow *row, int at);
+// editor operations
 static void editorInsertChar(int c);
 static void editorInsertNewLine();
 static void editorDelChar();
+// file i/o
 static char *editorRowsToString(int *buflen);
 static void editorOpen(char *filename);
 static int editorSave();
+// find
+static void editorFindCallback(char *query, int key);
 static void editorFind();
+// output
+static void editorScroll();
 static void editorRefreshScreen();
 static void editorSetStatusMessage(const char* fmt, ...);
+// input
 static char *editorPrompt(char *prompt, void (*callback)(char *, int));
 static void editorMoveCursor(int key);
 static void editorProcessKeypress();
+// init
 static void initEditor();
 
 //}}}
@@ -236,18 +249,29 @@ int getWindowSize(int *rows, int *cols) {
 
 // syntax highlight {{{
 
+int is_separator(int c) {
+    return isspace(c) || c == '\0' || strchr(",.()+-/*=~%<>[];", c) != NULL;
+}
+
 void editorUpdateSyntax(erow *row) {
     row->hl = realloc(row->hl, row->rsize);
     memset(row->hl, HL_NORMAL, row->rsize);
 
+    int prev_sep = 1;
+
     int i = 0;
     while (i < row->rsize) {
         char c = row->render[i];
+        unsigned char prev_hl = (i>0) ? row->hl[i-1] : HL_NORMAL;
 
-        if (isdigit(row->render[i])) {
+        if (isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) {
             row->hl[i] = HL_NUMBER;
+            i++;
+            prev_sep = 0;
+            continue;
         }
         
+        prev_sep = is_separator(c);
         i++;
     }
 }
