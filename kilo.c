@@ -389,7 +389,7 @@ int editorSyntaxToColor(int hl) {
 		case HL_KEYWORD2: return 36;
 		case HL_STRING: return 33;
 		case HL_NUMBER: return 35;
-		case HL_MATCH: return 34;
+		case HL_MATCH: return 42;
 		default: return 37;
 	}
 }
@@ -802,6 +802,7 @@ void editorDrawRows(struct abuf *ab) {
 				if (hl[j] == HL_NORMAL) {
 					if (current_color != -1) {
 						abAppend(ab, "\x1b[39m", 5);
+						abAppend(ab, "\x1b[49m", 5);
 						current_color = -1;
 					}
 					abAppend(ab, &c[j], 1);
@@ -817,6 +818,7 @@ void editorDrawRows(struct abuf *ab) {
 				}
 			}
 			abAppend(ab, "\x1b[39m", 5);
+			abAppend(ab, "\x1b[49m", 5);
 		}
 
 		abAppend(ab, "\x1b[K", 3);
