@@ -1139,8 +1139,6 @@ int main(int argc, char *argv[]) {
 	if (argc >= 2) {
 		editorOpen(argv[1]);
 	}
-    }
-
 
 	editorSetStatusMessage("HELP: Ctrl-Q: Quit | Ctrl-S: Save");
 
