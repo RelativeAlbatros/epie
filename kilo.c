@@ -101,15 +101,16 @@ struct editorConfig E;
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char *C_HL_keywords[] = {
 	"switch", "if", "while", "for", "break", "continue", "return", "else",
-	"struct", "union", "typedef", "static", "enum", "class", "case",
+	"struct", "union", "typedef", "enum", "class", "case",
 	"int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-	"void|", "static|", NULL
+	"void", "static|", NULL
 };
 
 struct editorSyntax HLDB[] = {
 	{
 		"c",
 		C_HL_extensions,
+		C_HL_keywords,
 		"//",
 		HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_FUNCTIONS
 	},
@@ -364,7 +365,7 @@ void editorUpdateSyntax(erow *row) {
 
 				if (!strncmp(&row->render[i], keywords[j], klen) &&
 						is_separator(row->render[i+klen])) {
-					memset(&row->hl[i], kw2, ? HL_KEYWORD2 : HL_KEYWORD1, klen);
+					memset(&row->hl[i], kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
 					i += klen;
 					break;
 				}
@@ -384,7 +385,7 @@ int editorSyntaxToColor(int hl) {
 	switch (hl) {
 		case HL_FUNCTION: return 32;
 		case HL_COMMENT: return 90;
-		case HL_KEYWORD1: return 32;
+		case HL_KEYWORD1: return 31;
 		case HL_KEYWORD2: return 36;
 		case HL_STRING: return 33;
 		case HL_NUMBER: return 35;
