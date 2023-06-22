@@ -110,8 +110,8 @@ static int kilo_debug = 0;
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char *C_HL_keywords[] = {
 	"switch", "if", "while", "for", "break", "continue", "return", "else",
-	"struct", "union", "typedef", "enum", "class", "case",
-	"int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
+	"union", "case", "ifndef", "#define", "#endif", "#pragma once"
+	"struct|", "typedef|", "enum|", "class|", "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
 	"void", "static|", NULL
 };
 
