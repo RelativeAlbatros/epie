@@ -325,6 +325,7 @@ void editorUpdateSyntax(erow *row) {
 	int i = 0;
 	while (i < row->rsize) {
 		char c = row->render[i];
+		char prev_c = row->render[i-1];
 		unsigned char prev_hl = (i>0) ? row->hl[i-1] : HL_NORMAL;
 
 		if (E.syntax->flags && HL_HIGHLIGHT_FUNCTIONS) {
