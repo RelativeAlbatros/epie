@@ -805,6 +805,11 @@ void editorDrawRows(struct abuf *ab) {
 					abAppend(ab, "\x1b[7m", 4);
 					abAppend(ab, &sym, 1);
 					abAppend(ab, "\x1b[m", 3);
+					if (current_color != -1) {
+						char buf[16];
+						int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", current_color);
+						abAppend(ab, buf, clen);
+					}
 				} else if (hl[j] == HL_COMMENT) {
 					abAppend(ab, "\x1b[2m", 4);
 					abAppend(ab, &c[j], 1);
