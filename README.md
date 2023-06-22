@@ -1,15 +1,12 @@
-# kilo
+# Kilo
 
 kilo is a terminal text editor similar to vi written from scratch in **C**.
 
-## usage
+## Compile
 
-read the man page.
-
-## install
-
-    make
-    sudo make clean install
+    meson build
+    cd build
+    meson compile
 
 ## License
 
