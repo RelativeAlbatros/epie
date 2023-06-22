@@ -328,7 +328,7 @@ void editorUpdateSyntax(erow *row) {
 		unsigned char prev_hl = (i>0) ? row->hl[i-1] : HL_NORMAL;
 
 		if (E.syntax->flags && HL_HIGHLIGHT_FUNCTIONS) {
-			if (in_string && row->render[i+1] == '(') {
+			if (!in_string && isalpha(row->render[i]) && row->render[i+1] == '(') {
 				for (int j = i; row->render[j] != ' '; j--) {
 					row->hl[j] = HL_FUNCTION;
 				}
