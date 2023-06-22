@@ -1,5 +1,6 @@
 project('kilo', 'c',
   version : '0.0.1',
-  default_options : ['warning_level=3'])
+  default_options : ['c_std=c99', 'warning_level=3'])
 
-executable('kilo', 'kilo.c', 'logger/logger.c', install : true)
+thread_dep = dependency('threads')
+executable('kilo', 'kilo.c', 'logger/logger.c', dependencies: thread_dep, install : true)

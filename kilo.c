@@ -322,13 +322,11 @@ void editorUpdateSyntax(erow *row) {
 				}
 			}
 		}
-
 		if (scs_len && !in_string) {
 			if (!strncmp(&row->render[i], scs, scs_len)) {
 				memset(&row->hl[i], HL_COMMENT, row->rsize - i);
 			}
 		}
-
 		if (E.syntax->flags && HL_HIGHLIGHT_STRINGS) {
 			if (in_string) {
 				row->hl[i] = HL_STRING;
@@ -350,7 +348,6 @@ void editorUpdateSyntax(erow *row) {
 				}
 			}
 		}
-
 		if (E.syntax->flags && HL_HIGHLIGHT_NUMBERS) {
 			if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) ||
 				(c == '.' && prev_hl == HL_NUMBER)) {
@@ -803,7 +800,16 @@ void editorDrawRows(struct abuf *ab) {
 			int current_color = -1;
 			int j;
 			for (j = 0; j < len; j++) {
-				if (hl[j] == HL_NORMAL) {
+				if (iscntrl(c[j])){
+					char sym = (c[j] <= 26) ? '@' + c[j] : '?';
+					abAppend(ab, "\x1b[7m", 4);
+					abAppend(ab, &sym, 1);
+					abAppend(ab, "\x1b[m", 3);
+				} else if (hl[j] == HL_COMMENT) {
+					abAppend(ab, "\x1b[2m", 4);
+					abAppend(ab, &c[j], 1);
+					abAppend(ab, "\x1b[0m", 4);
+				} else if (hl[j] == HL_NORMAL) {
 					if (current_color != -1) {
 						abAppend(ab, "\x1b[39m", 5);
 						abAppend(ab, "\x1b[49m", 5);
