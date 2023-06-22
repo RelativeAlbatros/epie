@@ -332,7 +332,7 @@ void editorUpdateSyntax(erow *row) {
 				}
 			}
 		}
-		if (scs_len && !in_string) {
+		if (scs_len && !in_string && !in_comment) {
 			if (!strncmp(&row->render[i], scs, scs_len)) {
 				memset(&row->hl[i], HL_COMMENT, row->rsize - i);
 			}
