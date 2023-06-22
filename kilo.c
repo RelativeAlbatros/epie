@@ -17,6 +17,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "logger/logger.h"
+
 //}}}
 // defines {{{
 
@@ -95,6 +97,8 @@ struct editorConfig {
 };
 
 struct editorConfig E;
+
+static int kilo_debug = 0;
 
 // filetypes {{{
 
@@ -1069,8 +1073,6 @@ void editorProcessKeypress() {
                 break;
             }
 
-                break;
-
 			case BACKSPACE:
 				editorMoveCursor(ARROW_RIGHT);
 				break;
@@ -1197,6 +1199,12 @@ int main(int argc, char *argv[]) {
 	if (argc >= 2) {
 		editorOpen(argv[1]);
 	}
+
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "--debug")) {
+            kilo_debug = 1;
+        }
+    }
 
 	editorSetStatusMessage("HELP: Ctrl-Q: Quit | Ctrl-S: Save");
 
