@@ -22,7 +22,7 @@
 //}}}
 // defines {{{
 
-#define KILO_VERSION "0.1.0"
+#define KILO_VERSION "0.1.1"
 #define KILO_TAB_STOP 4
 #define KILO_MESSAGE_TIMEOUT  5
 #define KILO_QUIT_TIMES 3
@@ -1113,8 +1113,8 @@ void editorProcessKeypress() {
                 if (c == 'd') {
                     editorDelRow(E.cy);
                 } else if (c == 'k') {
-                    editorDelRow(E.cy - 1);
                     editorDelRow(E.cy);
+                    editorDelRow(E.cy - 1);
                     editorMoveCursor(ARROW_UP);
                 } else if (c == 'j') {
                     editorDelRow(E.cy + 1);
