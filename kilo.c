@@ -104,6 +104,7 @@ struct editorConfig {
 struct editorConfig E;
 
 static int kilo_debug = 0;
+static int last_input_char;
 
 //}}}
 // filetypes {{{
@@ -258,6 +259,7 @@ int editorReadKey() {
 
 		return '\x1b';
 	} else {
+		last_input_char = c;
 		return c;
 	}
 }
@@ -903,7 +905,8 @@ void editorDrawStatusBar(struct abuf *ab) {
 			E.filename ? E.filename : "[No Name]", 
 			E.dirty ? " [+] " : " ",
 			E.numrows);
-	int rlen = snprintf(rstatus, sizeof(rstatus), "%s \x1b[30m\x1b[104m%s %d/%d \x1b[m",
+	int rlen = snprintf(rstatus, sizeof(rstatus), "%c %s \x1b[30m\x1b[104m%s %d/%d \x1b[m",
+			last_input_char,
 			E.syntax ? E.syntax->filetype : "no ft", E.separator,
 			E.cy + 1, E.numrows);
 	if (len > E.screencols) len = E.screencols;
