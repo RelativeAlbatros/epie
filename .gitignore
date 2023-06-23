@@ -2,3 +2,4 @@ kilo
 tags*
 build/
 log.txt
+.local.vimrc
