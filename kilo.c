@@ -17,8 +17,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "logger/logger.h"
-
 //}}}
 // defines {{{
 
