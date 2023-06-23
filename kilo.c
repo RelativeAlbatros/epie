@@ -110,10 +110,10 @@ static int kilo_debug = 0;
 
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char *C_HL_keywords[] = {
-	"switch", "if", "while", "for", "break", "continue", "return", "else",
-	"union", "case", "#ifndef", "#define", "#endif", "#pragma once", "namespace",
+	"switch", "if", "while", "for", "break", "continue", "return", "else", "default",
+	"union", "case", "#include", "#ifndef", "#define", "#endif", "#pragma once", "namespace",
 	"struct|", "typedef|", "enum|", "class|", "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-	"void", "static|", "using|", "std", NULL
+	"void|", "static|", "using|", "std", NULL
 };
 
 struct editorSyntax HLDB[] = {
@@ -891,18 +891,19 @@ void editorDrawRows(struct abuf *ab) {
 
 void editorDrawStatusBar(struct abuf *ab) {
 	abAppend(ab, "\x1b[40m", 5);
+
 	char status[80], rstatus[80];
 	char *e_mode;
-	if (E.mode == 0) e_mode = "NORMAL";
+	if (E.mode == 0)      e_mode = "NORMAL";
 	else if (E.mode == 1) e_mode = "INSERT";
 	else if (E.mode == 2) e_mode = "COMMAND";
 	else if (E.mode == 3) e_mode = "SEARCH";
-	int len = snprintf(status, sizeof(status), "\x1b[44m %s %s\x1b[m %.20s%s- %d",
+	int len = snprintf(status, sizeof(status), "\x1b[30m\x1b[104m %s %s\x1b[m %.20s%s- %d",
 			e_mode , E.separator,
 			E.filename ? E.filename : "[No Name]", 
 			E.dirty ? " [+] " : " ",
 			E.numrows);
-	int rlen = snprintf(rstatus, sizeof(rstatus), "%s \x1b[44m%s %d/%d\x1b[m",
+	int rlen = snprintf(rstatus, sizeof(rstatus), "%s \x1b[30m\x1b[104m%s %d/%d \x1b[m",
 			E.syntax ? E.syntax->filetype : "no ft", E.separator,
 			E.cy + 1, E.numrows);
 	if (len > E.screencols) len = E.screencols;
@@ -1158,6 +1159,9 @@ void editorProcessKeypress() {
 			case 'g': E.cy = 0; break;
 			case 'G': E.cy = E.numrows; break;
 
+			case '>': editorRowInsertChar(&E.row[E.cy], 0, '\t'); break;
+			case '<': if (E.row[E.cy].chars[0] == '\t') editorRowDelChar(&E.row[E.cy], 0); break;
+
 			case HOME_KEY: E.cx = 0; break;
 			case END_KEY: 
 				if (E.cy < E.numrows)
@@ -1199,7 +1203,7 @@ void editorProcessKeypress() {
 				if (E.dirty && quit_times > 0) {
 					editorSetStatusMessage("Error: no write since last change, press Ctrl-Q %d more times to quit.", quit_times);
 					quit_times--;
-				return;
+					return;
 				}
 				quit();
 				break;
