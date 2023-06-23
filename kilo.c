@@ -23,10 +23,7 @@
 // defines {{{
 
 #define KILO_VERSION "0.1.1"
-#define KILO_TAB_STOP 4
-#define KILO_MESSAGE_TIMEOUT  5
 #define KILO_QUIT_TIMES 3
-#define KILO_SEPARATOR " | "
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -83,6 +80,8 @@ typedef struct erow {
 } erow;
 
 struct editorConfig {
+	// 0: normal, 1: input, 2: command, 3: search
+	int mode;
 	int cx, cy;
 	int rx;
 	int rowoff;
@@ -90,13 +89,16 @@ struct editorConfig {
 	int screenrows;
 	int screencols;
 	int numrows;
-	erow *row;
 	int dirty;
-	// 0: normal, 1: input, 2: command, 3: search
-	int mode;
+	unsigned short int numberlen;
+	unsigned short int message_timeout;
+	unsigned short int tab_stop;
+	unsigned short int numberline;
+	char *separator;
 	char *filename;
 	char statusmsg[80];
 	time_t statusmsg_time;
+	erow *row;
 	struct editorSyntax *syntax;
 	struct termios orig_termios;
 };
@@ -105,14 +107,15 @@ struct editorConfig E;
 
 static int kilo_debug = 0;
 
+//}}}
 // filetypes {{{
 
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char *C_HL_keywords[] = {
 	"switch", "if", "while", "for", "break", "continue", "return", "else",
-	"union", "case", "ifndef", "#define", "#endif", "#pragma once"
+	"union", "case", "#ifndef", "#define", "#endif", "#pragma once", "namespace",
 	"struct|", "typedef|", "enum|", "class|", "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-	"void", "static|", NULL
+	"void", "static|", "using|", "std", NULL
 };
 
 struct editorSyntax HLDB[] = {
@@ -126,7 +129,6 @@ struct editorSyntax HLDB[] = {
 };
 
 #define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
-//}}}
 //}}}
 // prototypes {{{
 
@@ -470,7 +472,7 @@ int editorRowCxToRx(erow *row, int cx) {
 	int j;
 	for (j = 0; j < cx; j++) {
 		if (row->chars[j] == '\t') 
-			rx += (KILO_TAB_STOP - 1) - (rx % KILO_TAB_STOP);
+			rx += (E.tab_stop - 1) - (rx % E.tab_stop);
 		rx++;
 	}
 	return rx;
@@ -481,7 +483,7 @@ int editorRowRxToCx(erow *row, int rx) {
   int cx;
   for (cx = 0; cx < row->size; cx++) {
 	if (row->chars[cx] == '\t')
-	  cur_rx += (KILO_TAB_STOP - 1) - (cur_rx % KILO_TAB_STOP);
+	  cur_rx += (E.tab_stop - 1) - (cur_rx % E.tab_stop);
 	cur_rx++;
 	if (cur_rx > rx) return cx;
   }
@@ -495,13 +497,13 @@ void editorUpdateRow(erow *row) {
 		if (row->chars[j] == '\t') tabs++;
 
 	free(row->render);
-	row->render = malloc(row->size + tabs*(KILO_TAB_STOP - 1) + 1);
+	row->render = malloc(row->size + tabs*(E.tab_stop - 1) + 1);
 	
 	int idx = 0;
 	for (j = 0; j < row->size; j++) {
 		if (row->chars[j] == '\t') {
 			row->render[idx++] = ' ';
-			while (idx % KILO_TAB_STOP != 0) row->render[idx++] = ' ';
+			while (idx % E.tab_stop != 0) row->render[idx++] = ' ';
 		} else {
 			row->render[idx++] = row->chars[j];
 		}
@@ -800,7 +802,6 @@ void editorScroll() {
 	if (E.cy < E.numrows) {
 		E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
 	}
-
 	if (E.cy < E.rowoff) {
 		E.rowoff = E.cy;
 	}
@@ -827,13 +828,17 @@ void editorDrawRows(struct abuf *ab) {
 				if (welcomelen > E.screencols) welcomelen = E.screencols;
 				int padding = (E.screencols - welcomelen) / 2;
 				if (padding) {
+					abAppend(ab, "\x1b[90m", 5);
 					abAppend(ab, "~", 1);
+					abAppend(ab, "\x1b[m", 3);
 					padding--;
 				}
 				while (padding--) abAppend(ab, " ", 1);
 				abAppend(ab, welcome, welcomelen);
 			} else {
+				abAppend(ab, "\x1b[90m", 5);
 				abAppend(ab, "~", 1);
+				abAppend(ab, "\x1b[m", 3);
 			}
 		} else {
 			int len = E.row[filerow].rsize - E.coloff;
@@ -887,20 +892,20 @@ void editorDrawRows(struct abuf *ab) {
 }
 
 void editorDrawStatusBar(struct abuf *ab) {
-	abAppend(ab, "\x1b[7m", 4);
+	abAppend(ab, "\x1b[40m", 5);
 	char status[80], rstatus[80];
 	char *e_mode;
 	if (E.mode == 0) e_mode = "NORMAL";
 	else if (E.mode == 1) e_mode = "INSERT";
 	else if (E.mode == 2) e_mode = "COMMAND";
 	else if (E.mode == 3) e_mode = "SEARCH";
-	int len = snprintf(status, sizeof(status), " %s%s%.20s%s- %d",
-			e_mode , KILO_SEPARATOR,
+	int len = snprintf(status, sizeof(status), "\x1b[44m %s %s\x1b[m %.20s%s- %d",
+			e_mode , E.separator,
 			E.filename ? E.filename : "[No Name]", 
 			E.dirty ? " [+] " : " ",
 			E.numrows);
-	int rlen = snprintf(rstatus, sizeof(rstatus), "%s%s%d/%d",
-			E.syntax ? E.syntax->filetype : "no ft", KILO_SEPARATOR,
+	int rlen = snprintf(rstatus, sizeof(rstatus), "%s \x1b[44m%s %d/%d\x1b[m",
+			E.syntax ? E.syntax->filetype : "no ft", E.separator,
 			E.cy + 1, E.numrows);
 	if (len > E.screencols) len = E.screencols;
 	abAppend(ab, status, len);
@@ -921,7 +926,7 @@ void editorDrawMessageBar(struct abuf *ab) {
 	abAppend(ab, "\x1b[K", 3);
 	int msglen = strlen(E.statusmsg);
 	if (msglen > E.screencols) msglen = E.screencols;
-	if (msglen && time(NULL) - E.statusmsg_time < KILO_MESSAGE_TIMEOUT)
+	if (msglen && time(NULL) - E.statusmsg_time < E.message_timeout)
 		abAppend(ab, E.statusmsg, msglen);
 }
 
@@ -1226,18 +1231,23 @@ void editorProcessKeypress() {
 // init {{{
 
 void initEditor() {
+	E.mode = 0;
 	E.cx = 0;
 	E.cy = 0;
 	E.rx = 0;
 	E.rowoff = 0;
 	E.coloff = 0;
 	E.numrows = 0;
-	E.row = NULL;
 	E.dirty = 0;
-	E.mode = 0;
+	E.numberlen  = 4;
+	E.message_timeout = 5;
+	E.tab_stop = 4;
+	E.numberline = 1;
+	E.separator = "|";
 	E.filename = NULL;
 	E.statusmsg[0] = '\0';
 	E.statusmsg_time = 0;
+	E.row = NULL;
 	E.syntax = NULL;
 
 	if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
