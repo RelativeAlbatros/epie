@@ -15,7 +15,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#define KILO_VERSION "0.1.2"
+#include "toml.h"
+
+#define KILO_VERSION "0.1.3"
 #define KILO_QUIT_TIMES 3
 
 #define CTRL_KEY(k) ((k) & 0x1f)
@@ -75,12 +77,12 @@ struct editorConfig {
 	unsigned short int line_indent;
 	unsigned short int message_timeout;
 	unsigned short int tab_stop;
-	unsigned short int numberline;
 	char *separator;
 	char statusmsg[80];
 	time_t statusmsg_time;
 	erow *row;
 	struct editorSyntax *syntax;
+	char *config_path;
 	// 0: normal, 1: input, 2: command, 3: search
 	unsigned short int mode;
 	unsigned short int cx, cy;
@@ -618,6 +620,36 @@ char *editorRowsToString(int *buflen) {
 	}
 
 	return buf;
+}
+
+void editorConfigSource() {
+	FILE *config;
+	char *path = malloc(80);
+	strcpy(path, getenv("HOME"));
+	strcat(path, E.config_path);
+	strcat(path, "/settings.toml");
+	printf(path);
+	char errbuf[200];
+
+	if ((config = fopen(path, "r")) == NULL) return;
+	toml_table_t *conf = toml_parse_file(config, errbuf, sizeof(errbuf));
+	fclose(config);
+	if (!conf) return;
+
+	toml_table_t *settings       = toml_table_in(conf,      "settings");
+	toml_datum_t number          = toml_bool_in(settings,   "number");
+	toml_datum_t numberlen       = toml_int_in(settings,    "numberlen");
+	toml_datum_t message_timeout = toml_int_in(settings,    "message-timeout");
+	toml_datum_t tab_stop        = toml_int_in(settings,    "tab-stop");
+	toml_datum_t separator       = toml_string_in(settings, "separator");
+
+	E.number          = number.u.b;
+	E.numberlen       = numberlen.u.i;
+	E.message_timeout = message_timeout.u.i;
+	E.tab_stop        = tab_stop.u.i;
+	E.separator       = separator.u.s;
+
+	free(separator.u.s);
 }
 
 void editorOpen(char *filename) {
@@ -1236,27 +1268,27 @@ void editorProcessKeypress() {
 
 
 void initEditor() {
-	E.number = 1;
-	E.numberlen  = 4;
-	E.line_indent = E.numberlen + 2;
+	E.number          = 1;
+	E.numberlen       = 4;
+	E.line_indent     = E.numberlen + 2;
 	E.message_timeout = 5;
-	E.tab_stop = 4;
-	E.numberline = 1;
-	E.separator = "|";
-	E.statusmsg[0] = '\0';
-	E.statusmsg_time = 0;
-	E.row = NULL;
-	E.syntax = NULL;
+	E.tab_stop        = 4;
+	E.separator       = "|";
+	E.statusmsg[0]    = '\0';
+	E.statusmsg_time  = 0;
+	E.row             = NULL;
+	E.syntax          = NULL;
 
-	E.mode = 0;
-	E.cx = 0;
-	E.cy = 0;
-	E.rx = E.line_indent;
-	E.rowoff = 0;
-	E.coloff = 0;
-	E.numrows = 0;
-	E.dirty = 0;
-	E.filename = NULL;
+	E.config_path     = "/.config/kilo";
+	E.mode            = 0;
+	E.cx              = 0;
+	E.cy              = 0;
+	E.rx              = E.line_indent;
+	E.rowoff          = 0;
+	E.coloff          = 0;
+	E.numrows         = 0;
+	E.dirty           = 0;
+	E.filename        = NULL;
 
 	if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 	E.screenrows -= 2;
@@ -1266,6 +1298,7 @@ void initEditor() {
 int main(int argc, char *argv[]) {
 	enableRawMode();
 	initEditor();
+	editorConfigSource();
 
 	if (argc >= 2) {
 		editorOpen(argv[1]);
