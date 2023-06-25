@@ -1,6 +1,6 @@
 # Kilo
 
-kilo is a terminal text editor in 1000 LoC that is similar to vi.
+kilo is a terminal text editor in <1000 LoC that is similar to vi.
 
 ## Features
 
@@ -18,18 +18,18 @@ kilo is a terminal text editor in 1000 LoC that is similar to vi.
 
 edit configuration file
 
-    [settings]
-        number = 1
-        numberlen = 4
-        message-timeout = 5
-        tab-stop = 4
-        separator = "|"
+	[settings]
+		number = 1
+		numberlen = 4
+		message-timeout = 5
+		tab-stop = 4
+		separator = "|"
 
 ## Compile
 
-    meson build
-    cd build
-    meson compile
+	meson build
+	cd build
+	meson compile
 
 ## License
 
