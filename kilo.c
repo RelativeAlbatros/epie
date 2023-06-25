@@ -128,6 +128,7 @@ static int getWindowSize(int *rows, int *cols);
 // syntax highlight
 static void editorUpdateSyntax(erow *row);
 static int editorSyntaxToColor(int hl);
+static void editorSelectSyntaxHighlight();
 // row operations
 static int editorRowCxToRx(erow *row, int cx);
 static int editorRowRxToCx(erow *row, int rx);
@@ -241,7 +242,8 @@ int editorReadKey() {
 
 		return '\x1b';
 	} else {
-		last_input_char = c;
+		if (c > 31 && c < 127)
+			last_input_char = c;
 		return c;
 	}
 }
@@ -619,6 +621,9 @@ char *editorRowsToString(int *buflen) {
 void editorOpen(char *filename) {
 	free(E.filename);
 	E.filename = strdup(filename);
+	// ignore path starting with ./ and ../
+	while (*(E.filename + 1) == '/') E.filename += 2;
+	while (*(E.filename + 1) == '.') E.filename += 3;
 
 	editorSelectSyntaxHighlight();
 
