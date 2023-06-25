@@ -4,7 +4,7 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdarg.h> 
 #include <stdlib.h>
@@ -764,7 +764,7 @@ void abFree(struct abuf *ab) {
 }
 
 void editorScroll() {
-	E.rx = E.cx;
+	E.rx = 0;
 	if (E.cy < E.numrows) {
 		E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
 	}
@@ -986,7 +986,9 @@ void editorMoveCursor(int key) {
 			break;
 		case 'l':
 		case ARROW_RIGHT:
-			if (row && E.cx < row->size) {
+			if (E.mode == 1 && row && E.cx < row->size) {
+				E.cx++;
+			} else if (E.mode == 0 && row && E.cx < row->size - 1) {
 				E.cx++;
 			} else if (row && E.cx == row->size) {
 				E.cy++;
@@ -1186,6 +1188,13 @@ void editorProcessKeypress() {
 
 			case '\r':
 				editorInsertNewLine();
+				break;
+
+			case ARROW_LEFT:
+			case ARROW_DOWN:
+			case ARROW_UP:
+			case ARROW_RIGHT:
+				editorMoveCursor(c);
 				break;
 
 			default:
