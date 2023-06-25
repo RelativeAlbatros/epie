@@ -5,7 +5,7 @@ kilo is a terminal text editor in <1000 LoC that is similar to vi.
 ## Features
 
 - numberline
-- toml config file (default: $HOME/.config/kilo/settings.toml)
+- toml config file (default: ~/.config/kilo/settings.toml)
  
 ### Planned Features
 
@@ -27,9 +27,9 @@ edit configuration file
 
 ## Compile
 
-	meson build
-	cd build
-	meson compile
+	$ meson build
+	$ cd build
+	$ meson compile
 
 ## License
 
