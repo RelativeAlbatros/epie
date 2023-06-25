@@ -25,11 +25,16 @@ edit configuration file
 		tab-stop = 4
 		separator = "|"
 
-## Compile
+## Compile and Run
 
 	$ meson build
 	$ cd build
 	$ meson compile
+	$ ./kilo
+ 
+### Install
+
+	# meson install
 
 ## License
 
