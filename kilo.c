@@ -95,7 +95,6 @@ struct editorConfig {
 
 struct editorConfig E;
 
-static int kilo_debug = 0;
 static int last_input_char;
 
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
@@ -1234,18 +1233,13 @@ void initEditor() {
 
 
 int main(int argc, char *argv[]) {
+	int opt;
 	enableRawMode();
 	initEditor();
 
 	if (argc >= 2) {
 		editorOpen(argv[1]);
 	}
-
-    for (int i = 0; i < argc; i++) {
-        if (strcmp(argv[i], "--debug")) {
-            kilo_debug = 1;
-        }
-    }
 
 	editorSetStatusMessage("HELP: Ctrl-Q: Quit | Ctrl-S: Save");
 
