@@ -15,7 +15,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define KILO_VERSION "0.1.1"
+#define KILO_VERSION "0.1.2"
 #define KILO_QUIT_TIMES 3
 
 #define CTRL_KEY(k) ((k) & 0x1f)
@@ -70,19 +70,9 @@ typedef struct erow {
 } erow;
 
 struct editorConfig {
-	// 0: normal, 1: input, 2: command, 3: search
-	unsigned short int mode;
-	unsigned short int cx, cy;
-	unsigned short int rx;
-	unsigned short int rowoff;
-	unsigned short int coloff;
-	unsigned short int screenrows;
-	unsigned short int screencols;
-	unsigned short int numrows;
-	unsigned short int dirty;
-	char *filename;
-
+	unsigned short int number;
 	unsigned short int numberlen;
+	unsigned short int line_indent;
 	unsigned short int message_timeout;
 	unsigned short int tab_stop;
 	unsigned short int numberline;
@@ -91,6 +81,17 @@ struct editorConfig {
 	time_t statusmsg_time;
 	erow *row;
 	struct editorSyntax *syntax;
+	// 0: normal, 1: input, 2: command, 3: search
+	unsigned short int mode;
+	unsigned short int cx, cy;
+	unsigned short int rx;
+	unsigned short int rowoff;
+	unsigned short int coloff;
+	int screenrows;
+	int screencols;
+	unsigned short int numrows;
+	unsigned short int dirty;
+	char *filename;
 	struct termios orig_termios;
 };
 
@@ -769,9 +770,9 @@ void abFree(struct abuf *ab) {
 }
 
 void editorScroll() {
-	E.rx = 0;
+	E.rx = E.line_indent;
 	if (E.cy < E.numrows) {
-		E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
+		E.rx = editorRowCxToRx(&E.row[E.cy], E.cx) + E.line_indent;
 	}
 	if (E.cy < E.rowoff) {
 		E.rowoff = E.cy;
@@ -801,7 +802,9 @@ void editorDrawRows(struct abuf *ab) {
 				int padding = (E.screencols - welcomelen) / 2;
 				if (padding) {
 					abAppend(ab, "\x1b[90m", 5);
+					for (int pad=0; pad<E.line_indent-2; pad++) abAppend(ab, " ", 1);
 					abAppend(ab, "~", 1);
+					abAppend(ab, " ", 1);
 					abAppend(ab, "\x1b[m", 3);
 					padding--;
 				}
@@ -809,10 +812,20 @@ void editorDrawRows(struct abuf *ab) {
 				abAppend(ab, welcome, welcomelen);
 			} else {
 				abAppend(ab, "\x1b[90m", 5);
+				for (int pad=0; pad<E.line_indent-2; pad++) abAppend(ab, " ", 1);
 				abAppend(ab, "~", 1);
+				abAppend(ab, " ", 1);
 				abAppend(ab, "\x1b[m", 3);
 			}
 		} else {
+			if (E.number) {
+				char rcol[80];
+				E.line_indent = snprintf(rcol, sizeof(rcol), " %*d ", 
+						E.numberlen, filerow + 1);
+				abAppend(ab, "\x1b[90m", 5);
+				abAppend(ab, rcol, E.line_indent);
+				abAppend(ab, "\x1b[m", 3);
+			}
 			int len = E.row[filerow].rsize - E.coloff;
 			if (len < 0) len = 0;
 			if (len > E.screencols) len = E.screencols;
@@ -990,14 +1003,8 @@ void editorMoveCursor(int key) {
 			break;
 		case 'l':
 		case ARROW_RIGHT:
-			if (E.mode == 1 && row && E.cx < row->size) {
+			if (row && E.cx < row->size - 1)
 				E.cx++;
-			} else if (E.mode == 0 && row && E.cx < row->size - 1) {
-				E.cx++;
-			} else if (row && E.cx == row->size) {
-				E.cy++;
-				E.cx=0;
-			}
 			break;
 		case 'k':
 		case ARROW_UP:
@@ -1007,7 +1014,9 @@ void editorMoveCursor(int key) {
 			break;
 		case 'j':
 		case ARROW_DOWN:
-			if (E.cy < E.numrows) {
+			if (E.mode == 1 && E.cy < E.numrows) {
+				E.cy++;
+			} else if (E.mode == 0 && E.cy < E.numrows - 1) {
 				E.cy++;
 			}
 			break;
@@ -1054,7 +1063,9 @@ void editorProcessKeypress() {
 				break;
 
 			case 'a':
-				E.cx += 1;
+				if (E.cx != 0) {
+					E.cx += 1;
+				}
 				E.mode = 1;
 				break;
 
@@ -1225,17 +1236,9 @@ void editorProcessKeypress() {
 
 
 void initEditor() {
-	E.mode = 0;
-	E.cx = 0;
-	E.cy = 0;
-	E.rx = 0;
-	E.rowoff = 0;
-	E.coloff = 0;
-	E.numrows = 0;
-	E.dirty = 0;
-	E.filename = NULL;
-
+	E.number = 1;
 	E.numberlen  = 4;
+	E.line_indent = E.numberlen + 2;
 	E.message_timeout = 5;
 	E.tab_stop = 4;
 	E.numberline = 1;
@@ -1244,6 +1247,16 @@ void initEditor() {
 	E.statusmsg_time = 0;
 	E.row = NULL;
 	E.syntax = NULL;
+
+	E.mode = 0;
+	E.cx = 0;
+	E.cy = 0;
+	E.rx = E.line_indent;
+	E.rowoff = 0;
+	E.coloff = 0;
+	E.numrows = 0;
+	E.dirty = 0;
+	E.filename = NULL;
 
 	if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 	E.screenrows -= 2;
