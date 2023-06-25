@@ -643,11 +643,16 @@ void editorConfigSource() {
 	toml_datum_t tab_stop        = toml_int_in(settings,    "tab-stop");
 	toml_datum_t separator       = toml_string_in(settings, "separator");
 
-	E.number          = number.u.b;
-	E.numberlen       = numberlen.u.i;
-	E.message_timeout = message_timeout.u.i;
-	E.tab_stop        = tab_stop.u.i;
-	E.separator       = separator.u.s;
+	if (number.ok)
+		E.number          = number.u.b;
+	if (numberlen.ok)
+		E.numberlen       = numberlen.u.i;
+	if (message_timeout.ok)
+		E.message_timeout = message_timeout.u.i;
+	if (tab_stop.ok)
+		E.tab_stop        = tab_stop.u.i;
+	if (separator.ok)
+		E.separator       = separator.u.s;
 
 	free(separator.u.s);
 }
