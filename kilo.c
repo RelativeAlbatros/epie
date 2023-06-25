@@ -52,7 +52,7 @@ enum editorHighlight {
 struct editorSyntax {
 	char *filetype;
 	char **filematch;
-    char **keywords;
+	char **keywords;
 	char *singleline_comment_start;
 	char *multiline_comment_start;
 	char *multiline_comment_end;
@@ -867,7 +867,7 @@ void editorDrawStatusBar(struct abuf *ab) {
 
 	char status[80], rstatus[80];
 	char *e_mode;
-	if (E.mode == 0)      e_mode = "NORMAL";
+	if (E.mode == 0)	  e_mode = "NORMAL";
 	else if (E.mode == 1) e_mode = "INSERT";
 	else if (E.mode == 2) e_mode = "COMMAND";
 	else if (E.mode == 3) e_mode = "SEARCH";
@@ -945,7 +945,7 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
 	buf[0] = '\0';
 
 	while (1) {
-	    editorSetStatusMessage(prompt, buf);
+		editorSetStatusMessage(prompt, buf);
 		editorRefreshScreen();
 
 		int c = editorReadKey();
@@ -1079,33 +1079,36 @@ void editorProcessKeypress() {
 				editorRowDelChar(&E.row[E.cy], E.cx);
 				break;
 
-            case 'r': {
-                int c = editorReadKey();
-                editorRowDelChar(&E.row[E.cy], E.cx);
-                editorInsertChar(c);
-                editorMoveCursor(ARROW_LEFT);
-                break;
-            }
+			case 'r': {
+				int c = editorReadKey();
+				editorRowDelChar(&E.row[E.cy], E.cx);
+				editorInsertChar(c);
+				editorMoveCursor(ARROW_LEFT);
+				break;
+			}
 
-            case 'd': {
-                int c = editorReadKey();
-                if (c == 'd') {
-                    editorDelRow(E.cy);
-                } else if (c == 'k') {
-                    editorDelRow(E.cy);
-                    editorDelRow(E.cy - 1);
-                    editorMoveCursor(ARROW_UP);
-                } else if (c == 'j') {
-                    editorDelRow(E.cy + 1);
-                    editorDelRow(E.cy);
-                } else if (c == 'l') {
-                    editorRowDelChar(&E.row[E.cy], E.cx+1);
-                    editorMoveCursor(ARROW_LEFT);
-                } else if (c == 'h') {
-                    editorRowDelChar(&E.row[E.cy], E.cx-1);
-                }
-                break;
-            }
+			case 'd': {
+				int c = editorReadKey();
+				if (c == 'd') {
+					editorDelRow(E.cy);
+				} else if (c == 'k') {
+					editorDelRow(E.cy);
+					editorDelRow(E.cy - 1);
+					editorMoveCursor(ARROW_UP);
+				} else if (c == 'j') {
+					editorDelRow(E.cy + 1);
+					editorDelRow(E.cy);
+				} else if (c == 'l') {
+					editorRowDelChar(&E.row[E.cy], E.cx+1);
+					editorMoveCursor(ARROW_LEFT);
+				} else if (c == 'h') {
+					editorRowDelChar(&E.row[E.cy], E.cx-1);
+				} else if (c == 'w') {
+					while (E.row[E.cy].chars[E.cx] != ' ' && E.cx != E.row[E.cy].size) 
+					editorRowDelChar(&E.row[E.cy], E.cx);
+				}
+				break;
+			}
 
 			case BACKSPACE:
 				editorMoveCursor(ARROW_RIGHT);
@@ -1134,14 +1137,23 @@ void editorProcessKeypress() {
 			case 'g': E.cy = 0; break;
 			case 'G': E.cy = E.numrows; break;
 
-			case '>': editorRowInsertChar(&E.row[E.cy], 0, '\t'); break;
-			case '<': if (E.row[E.cy].chars[0] == '\t') editorRowDelChar(&E.row[E.cy], 0); break;
+			case '>':
+				editorRowInsertChar(&E.row[E.cy], 0, '\t');
+				editorMoveCursor(ARROW_RIGHT);
+				break;
+
+			case '<':
+				if (E.row[E.cy].chars[0] == '\t') {
+					editorRowDelChar(&E.row[E.cy], 0);
+					editorMoveCursor(ARROW_LEFT);
+				}
+				break;
 
 			case HOME_KEY: E.cx = 0; break;
 			case END_KEY: 
 				if (E.cy < E.numrows)
 					E.cx = E.row[E.cy].size;
-                break;
+				break;
 
 			case PAGE_UP:
 			case PAGE_DOWN: {
