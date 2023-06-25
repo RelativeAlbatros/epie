@@ -1,5 +1,3 @@
-//{{{ includes
-
 #define _DEFAULT_SOURCE
 #define _BSD_SOURCE
 #define _GNU_SOURCE
@@ -16,9 +14,6 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
-
-//}}}
-// defines {{{
 
 #define KILO_VERSION "0.1.1"
 #define KILO_QUIT_TIMES 3
@@ -53,9 +48,6 @@ enum editorHighlight {
 #define HL_HIGHLIGHT_NUMBERS (1<<0)
 #define HL_HIGHLIGHT_STRINGS (1<<1)
 #define HL_HIGHLIGHT_FUNCTIONS (1<<2)
-
-//}}}
-// data {{{
 
 struct editorSyntax {
 	char *filetype;
@@ -106,9 +98,6 @@ struct editorConfig E;
 static int kilo_debug = 0;
 static int last_input_char;
 
-//}}}
-// filetypes {{{
-
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char *C_HL_keywords[] = {
 	"switch", "if", "while", "for", "break", "continue", "return", "else", "default",
@@ -128,8 +117,6 @@ struct editorSyntax HLDB[] = {
 };
 
 #define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
-//}}}
-// prototypes {{{
 
 // terminal
 static void quit();
@@ -173,10 +160,6 @@ static void editorMoveCursor(int key);
 static void editorProcessKeypress();
 // init
 static void initEditor();
-
-//}}}
-
-// terminal {{{
 
 void quit() {
 	disableRawMode();
@@ -296,9 +279,6 @@ int getWindowSize(int *rows, int *cols) {
 	}
 }
 
-//}}}
-
-// syntax highlight {{{
 
 int is_separator(int c) {
 	return isspace(c) || c == '\0' || strchr(",.()+-/*=~%<>[];", c) != NULL;
@@ -464,8 +444,6 @@ void editorSelectSyntaxHighlight() {
 	}
 }
 
-//}}}
-// row operations {{{
 
 int editorRowCxToRx(erow *row, int cx) {
 	int rx = 0;
@@ -579,8 +557,6 @@ void editorRowDelChar(erow *row, int at) {
 	E.dirty++;
 }
 
-//}}}
-// editor operations {{{
 
 void editorInsertChar(int c) {
 	if (E.cy == E.numrows) {
@@ -621,8 +597,6 @@ void editorDelChar() {
 	}
 }
 
-//}}}
-// file i/o {{{
 
 char *editorRowsToString(int *buflen) {
 	int totlen = 0;
@@ -697,8 +671,6 @@ int editorSave() {
 	return -1;
 }
 
-//}}}
-// find {{{
 
 void editorFindCallback(char *query, int key) {
 	static int last_match = -1;
@@ -770,9 +742,6 @@ void editorFind() {
 	E.mode = saved_mode;
 }
 
-//}}}
-
-// append buffer {{{
 
 struct abuf {
 	char *b;
@@ -794,9 +763,6 @@ void abFree(struct abuf *ab) {
 	free(ab->b);
 }
 
-//}}}
-// output {{{
-
 void editorScroll() {
 	E.rx = E.cx;
 	if (E.cy < E.numrows) {
@@ -815,6 +781,7 @@ void editorScroll() {
 		E.coloff = E.rx - E.screencols + 1;
 	}
 }
+
 
 void editorDrawRows(struct abuf *ab) {
 	int y;
@@ -900,19 +867,19 @@ void editorDrawStatusBar(struct abuf *ab) {
 	else if (E.mode == 1) e_mode = "INSERT";
 	else if (E.mode == 2) e_mode = "COMMAND";
 	else if (E.mode == 3) e_mode = "SEARCH";
-	int len = snprintf(status, sizeof(status), "\x1b[30m\x1b[104m %s %s\x1b[m %.20s%s- %d",
+	int len = snprintf(status, sizeof(status), " %s %s %.20s%s- %d",
 			e_mode , E.separator,
 			E.filename ? E.filename : "[No Name]", 
 			E.dirty ? " [+] " : " ",
 			E.numrows);
-	int rlen = snprintf(rstatus, sizeof(rstatus), "%c %s \x1b[30m\x1b[104m%s %d/%d \x1b[m",
+	int rlen = snprintf(rstatus, sizeof(rstatus), "%c %s %s %d/%d ",
 			last_input_char,
 			E.syntax ? E.syntax->filetype : "no ft", E.separator,
 			E.cy + 1, E.numrows);
 	if (len > E.screencols) len = E.screencols;
 	abAppend(ab, status, len);
 	while (len < E.screencols) {
-		if (E.screencols - len + 27 == rlen) {
+		if (E.screencols - len == rlen) {
 			abAppend(ab, rstatus, rlen);
 			break;
 		} else {
@@ -932,7 +899,9 @@ void editorDrawMessageBar(struct abuf *ab) {
 		abAppend(ab, E.statusmsg, msglen);
 }
 
+
 void editorRefreshScreen() {
+	if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 	editorScroll();
 
 	struct abuf ab = ABUF_INIT;
@@ -964,8 +933,6 @@ void editorSetStatusMessage(const char *fmt, ...) {
 	E.statusmsg_time = time(NULL);
 }
 
-//}}}
-// input {{{
 
 char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
 	size_t bufsize = 128;
@@ -1231,9 +1198,6 @@ void editorProcessKeypress() {
 	quit_times = KILO_QUIT_TIMES;
 }
 
-//}}}
-
-// init {{{
 
 void initEditor() {
 	E.mode = 0;
@@ -1259,9 +1223,7 @@ void initEditor() {
 	E.screenrows -= 2;
 }
 
-//}}}
 
-// main {{{
 int main(int argc, char *argv[]) {
 	enableRawMode();
 	initEditor();
@@ -1285,5 +1247,4 @@ int main(int argc, char *argv[]) {
 
 	quit();
 }
-//}}}
 
