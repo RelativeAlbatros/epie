@@ -71,21 +71,22 @@ typedef struct erow {
 
 struct editorConfig {
 	// 0: normal, 1: input, 2: command, 3: search
-	int mode;
-	int cx, cy;
-	int rx;
-	int rowoff;
-	int coloff;
-	int screenrows;
-	int screencols;
-	int numrows;
-	int dirty;
+	unsigned short int mode;
+	unsigned short int cx, cy;
+	unsigned short int rx;
+	unsigned short int rowoff;
+	unsigned short int coloff;
+	unsigned short int screenrows;
+	unsigned short int screencols;
+	unsigned short int numrows;
+	unsigned short int dirty;
+	char *filename;
+
 	unsigned short int numberlen;
 	unsigned short int message_timeout;
 	unsigned short int tab_stop;
 	unsigned short int numberline;
 	char *separator;
-	char *filename;
 	char statusmsg[80];
 	time_t statusmsg_time;
 	erow *row;
@@ -1232,12 +1233,13 @@ void initEditor() {
 	E.coloff = 0;
 	E.numrows = 0;
 	E.dirty = 0;
+	E.filename = NULL;
+
 	E.numberlen  = 4;
 	E.message_timeout = 5;
 	E.tab_stop = 4;
 	E.numberline = 1;
 	E.separator = "|";
-	E.filename = NULL;
 	E.statusmsg[0] = '\0';
 	E.statusmsg_time = 0;
 	E.row = NULL;
