@@ -900,7 +900,6 @@ void editorDrawMessageBar(struct abuf *ab) {
 
 
 void editorRefreshScreen() {
-	if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 	editorScroll();
 
 	struct abuf ab = ABUF_INIT;
@@ -1233,7 +1232,6 @@ void initEditor() {
 
 
 int main(int argc, char *argv[]) {
-	int opt;
 	enableRawMode();
 	initEditor();
 
