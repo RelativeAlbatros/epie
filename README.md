@@ -6,10 +6,10 @@ kilo is a terminal text editor in <1000 LoC that is similar to vi.
 
 - numberline
 - toml config file (default: ~/.config/kilo/settings.toml)
+- Auto indent
  
 ### Planned Features
 
-- Auto indent
 - Text selection
 - Copy and paste
 - Soft wrap
@@ -19,7 +19,7 @@ kilo is a terminal text editor in <1000 LoC that is similar to vi.
 edit configuration file
 
 	[settings]
-		number = 1
+		number = true
 		numberlen = 4
 		message-timeout = 5
 		tab-stop = 4

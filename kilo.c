@@ -17,7 +17,7 @@
 
 #include "toml.h"
 
-#define KILO_VERSION "0.1.3"
+#define KILO_VERSION "0.1.4"
 #define KILO_QUIT_TIMES 3
 #define KILO_LOG_PATH "/tmp/kilo.log"
 
@@ -602,18 +602,28 @@ void editorInsertChar(int c) {
 }
 
 void editorInsertNewLine() {
+	int tabs = 0;
 	if (E.cx == 0) {
 		editorInsertRow(E.cy, "", 0);
 	} else {
 		erow *row = &E.row[E.cy];
 		editorInsertRow(E.cy+1, &row->chars[E.cx], row->size - E.cx);
+		for (int i = 0; i < row->size; i++) {
+			if (row->chars[i] != '\t') {
+				break;
+			} else {
+				editorRowInsertChar(&E.row[E.cy+1], 0, '\t');
+				tabs++;
+			}
+		}
 		row = &E.row[E.cy];
 		row->size = E.cx;
 		row->chars[row->size] = '\0';
 		editorUpdateRow(row);
 	}
 	E.cy++;
-	E.cx = 0;
+	E.cx = tabs;
+	E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
 }
 
 void editorDelChar() {
@@ -666,19 +676,25 @@ void editorConfigSource() {
 	if (!conf) return;
 
 	toml_table_t *settings       = toml_table_in(conf,      "settings");
-	toml_datum_t number          = toml_bool_in(settings,   "number");
+	toml_datum_t number          = toml_bool_in(settings,    "number");
 	toml_datum_t numberlen       = toml_int_in(settings,    "numberlen");
 	toml_datum_t message_timeout = toml_int_in(settings,    "message-timeout");
 	toml_datum_t tab_stop        = toml_int_in(settings,    "tab-stop");
 	toml_datum_t separator       = toml_string_in(settings, "separator");
 
-	if (number.ok)
+	if (number.ok && E.number)
 		E.number          = number.u.b;
-	if (numberlen.ok)
-		E.numberlen       = numberlen.u.i;
+	if (E.number) {
+		if (numberlen.ok)
+			E.numberlen   = numberlen.u.i;
+	} else {
+		E.numberlen = 0;
+	}
+	E.line_indent         = E.numberlen + 2;
+
 	if (message_timeout.ok)
 		E.message_timeout = message_timeout.u.i;
-	if (tab_stop.ok)
+	if (tab_stop.ok && tab_stop.u.i != 0)
 		E.tab_stop        = tab_stop.u.i;
 	if (separator.ok)
 		E.separator       = separator.u.s;
@@ -891,6 +907,8 @@ void editorDrawRows(struct abuf *ab) {
 				abAppend(ab, "\x1b[90m", 5);
 				abAppend(ab, rcol, E.line_indent);
 				abAppend(ab, "\x1b[m", 3);
+			} else {
+				abAppend(ab, "  ", 2);
 			}
 			int len = E.row[filerow].rsize - E.coloff;
 			if (len < 0) len = 0;
