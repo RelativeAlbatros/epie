@@ -15,7 +15,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "toml.h"
+#include "lib/toml.h"
 
 #define KILO_VERSION "0.1.4"
 #define KILO_QUIT_TIMES 3

@@ -4,4 +4,4 @@ project('kilo', 'c',
 
 add_project_arguments('-Wunused-function', language : 'c')
 thread_dep = dependency('threads')
-executable('kilo', ['kilo.c', 'toml.c'], dependencies: thread_dep, install : true)
+executable('kilo', ['kilo.c', 'lib/toml.c'], dependencies: thread_dep, install : true)
