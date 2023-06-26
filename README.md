@@ -23,7 +23,7 @@ edit configuration file
 		numberlen = 4
 		message-timeout = 5
 		tab-stop = 4
-		separator = "|"
+		separator = '|'
 
 ## Compile and Run
 

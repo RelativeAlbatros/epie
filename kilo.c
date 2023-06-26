@@ -78,7 +78,7 @@ struct editorConfig {
 	unsigned short int line_indent;
 	unsigned short int message_timeout;
 	unsigned short int tab_stop;
-	char *separator;
+	char separator;
 	char statusmsg[80];
 	time_t statusmsg_time;
 	erow *row;
@@ -676,7 +676,7 @@ void editorConfigSource() {
 	if (!conf) return;
 
 	toml_table_t *settings       = toml_table_in(conf,      "settings");
-	toml_datum_t number          = toml_bool_in(settings,    "number");
+	toml_datum_t number          = toml_bool_in(settings,   "number");
 	toml_datum_t numberlen       = toml_int_in(settings,    "numberlen");
 	toml_datum_t message_timeout = toml_int_in(settings,    "message-timeout");
 	toml_datum_t tab_stop        = toml_int_in(settings,    "tab-stop");
@@ -697,7 +697,7 @@ void editorConfigSource() {
 	if (tab_stop.ok && tab_stop.u.i != 0)
 		E.tab_stop        = tab_stop.u.i;
 	if (separator.ok)
-		E.separator       = separator.u.s;
+		E.separator =  separator.u.s[0];
 
 	free(separator.u.s);
 }
@@ -969,12 +969,12 @@ void editorDrawStatusBar(struct abuf *ab) {
 	else if (E.mode == 1) e_mode = "INSERT";
 	else if (E.mode == 2) e_mode = "COMMAND";
 	else if (E.mode == 3) e_mode = "SEARCH";
-	int len = snprintf(status, sizeof(status), " %s %s %.20s%s- %d",
+	int len = snprintf(status, sizeof(status), " %s %c %.20s%s- %d",
 			e_mode , E.separator,
 			E.filename ? E.filename : "[No Name]", 
 			E.dirty ? " [+] " : " ",
 			E.numrows);
-	int rlen = snprintf(rstatus, sizeof(rstatus), "%c %s %s %d/%d ",
+	int rlen = snprintf(rstatus, sizeof(rstatus), "%c %s %c %d/%d ",
 			last_input_char,
 			E.syntax ? E.syntax->filetype : "no ft", E.separator,
 			E.cy + 1, E.numrows);
@@ -1325,7 +1325,7 @@ void initEditor() {
 	E.line_indent     = E.numberlen + 2;
 	E.message_timeout = 5;
 	E.tab_stop        = 4;
-	E.separator       = "|";
+	E.separator       = '|';
 	E.statusmsg[0]    = '\0';
 	E.statusmsg_time  = 0;
 	E.row             = NULL;
