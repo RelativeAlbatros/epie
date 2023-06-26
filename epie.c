@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdarg.h> 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -17,9 +17,9 @@
 
 #include "lib/toml.h"
 
-#define KILO_VERSION "0.1.4"
-#define KILO_QUIT_TIMES 3
-#define KILO_LOG_PATH "/tmp/kilo.log"
+#define EPIE_VERSION "0.1.4"
+#define EPIE_QUIT_TIMES 3
+#define EPIE_LOG_PATH "/tmp/epie.log"
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -171,7 +171,7 @@ static void initEditor();
 void logger(const int tag, const char *msg, ...) {
 	va_list args;
 	va_start(args, msg);
-	FILE *log = fopen(KILO_LOG_PATH, "a");
+	FILE *log = fopen(EPIE_LOG_PATH, "a");
 	if (log == NULL) die("log");
 	char message[256];
 	char tag_type[16];
@@ -427,7 +427,7 @@ void editorUpdateSyntax(erow *row) {
 				continue;
 			}
 		}
-		
+
 		prev_sep = is_separator(c);
 		i++;
 	}
@@ -484,7 +484,7 @@ int editorRowCxToRx(erow *row, int cx) {
 	int rx = 0;
 	int j;
 	for (j = 0; j < cx; j++) {
-		if (row->chars[j] == '\t') 
+		if (row->chars[j] == '\t')
 			rx += (E.tab_stop - 1) - (rx % E.tab_stop);
 		rx++;
 	}
@@ -511,7 +511,7 @@ void editorUpdateRow(erow *row) {
 
 	free(row->render);
 	row->render = malloc(row->size + tabs*(E.tab_stop - 1) + 1);
-	
+
 	int idx = 0;
 	for (j = 0; j < row->size; j++) {
 		if (row->chars[j] == '\t') {
@@ -582,7 +582,7 @@ void editorRowAppendString(erow *row, char *s, size_t len) {
 	row->chars[row->size] = '\0';
 	editorUpdateRow(row);
 	E.dirty++;
-} 
+}
 
 void editorRowDelChar(erow *row, int at) {
 	if (at < 0 || at >= row->size) return;
@@ -800,7 +800,7 @@ void editorFindCallback(char *query, int key) {
 			E.cy = current;
 			E.cx = editorRowRxToCx(row, match - row->render);
 			E.rowoff = E.numrows;
-			
+
 			saved_hl_line = current;
 			saved_hl = malloc(row->rsize);
 			memcpy(saved_hl, row->hl, row->rsize);
@@ -813,7 +813,7 @@ void editorFindCallback(char *query, int key) {
 void editorFind() {
 	int saved_cx = E.cx;
 	int saved_cy = E.cy;
-	int saved_coloff = E.coloff; 
+	int saved_coloff = E.coloff;
 	int saved_rowoff = E.rowoff;
 	int saved_mode = E.mode;
 
@@ -879,7 +879,7 @@ void editorDrawRows(struct abuf *ab) {
 			if (E.numrows == 0 && y == E.screenrows / 3) {
 				char welcome[80];
 				int welcomelen = snprintf(welcome, sizeof(welcome),
-				"Kilo editor -- version %s", KILO_VERSION);
+				"epie editor -- version %s", EPIE_VERSION);
 				if (welcomelen > E.screencols) welcomelen = E.screencols;
 				int padding = (E.screencols - welcomelen) / 2;
 				if (padding) {
@@ -902,7 +902,7 @@ void editorDrawRows(struct abuf *ab) {
 		} else {
 			if (E.number) {
 				char rcol[80];
-				E.line_indent = snprintf(rcol, sizeof(rcol), " %*d ", 
+				E.line_indent = snprintf(rcol, sizeof(rcol), " %*d ",
 						E.numberlen, filerow + 1);
 				abAppend(ab, "\x1b[90m", 5);
 				abAppend(ab, rcol, E.line_indent);
@@ -971,7 +971,7 @@ void editorDrawStatusBar(struct abuf *ab) {
 	else if (E.mode == 3) e_mode = "SEARCH";
 	int len = snprintf(status, sizeof(status), " %s %c %.20s%s- %d",
 			e_mode , E.separator,
-			E.filename ? E.filename : "[No Name]", 
+			E.filename ? E.filename : "[No Name]",
 			E.dirty ? " [+] " : " ",
 			E.numrows);
 	int rlen = snprintf(rstatus, sizeof(rstatus), "%c %s %c %d/%d ",
@@ -1114,7 +1114,7 @@ void editorMoveCursor(int key) {
 }
 
 void editorProcessKeypress() {
-	static int quit_times = KILO_QUIT_TIMES;
+	static int quit_times = EPIE_QUIT_TIMES;
 
 	int c = editorReadKey();
 
@@ -1200,7 +1200,7 @@ void editorProcessKeypress() {
 				} else if (c == 'h') {
 					editorRowDelChar(&E.row[E.cy], E.cx-1);
 				} else if (c == 'w') {
-					while (E.row[E.cy].chars[E.cx] != ' ' && E.cx != E.row[E.cy].size) 
+					while (E.row[E.cy].chars[E.cx] != ' ' && E.cx != E.row[E.cy].size)
 					editorRowDelChar(&E.row[E.cy], E.cx);
 				}
 				break;
@@ -1246,7 +1246,7 @@ void editorProcessKeypress() {
 				break;
 
 			case HOME_KEY: E.cx = 0; break;
-			case END_KEY: 
+			case END_KEY:
 				if (E.cy < E.numrows)
 					E.cx = E.row[E.cy].size;
 				break;
@@ -1258,8 +1258,8 @@ void editorProcessKeypress() {
 				} else if (c == PAGE_DOWN) {
 					E.cy = E.rowoff + E.screenrows - 1;
 					if (E.cy > E.numrows) E.cy = E.numrows;
-				} 
-				
+				}
+
 				int times = E.screenrows;
 				while (times--) {
 					editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
@@ -1281,7 +1281,7 @@ void editorProcessKeypress() {
 				if (E.cx != 0) editorMoveCursor(ARROW_LEFT);
 				E.mode = 0;
 				break;
-			
+
 			case CTRL_KEY('q'):
 				if (E.dirty && quit_times > 0) {
 					editorSetStatusMessage("Error: no write since last change, press Ctrl-Q %d more times to quit.", quit_times);
@@ -1315,7 +1315,7 @@ void editorProcessKeypress() {
 		}
 	}
 
-	quit_times = KILO_QUIT_TIMES;
+	quit_times = EPIE_QUIT_TIMES;
 }
 
 
@@ -1331,7 +1331,7 @@ void initEditor() {
 	E.row             = NULL;
 	E.syntax          = NULL;
 
-	E.config_path     = "/.config/kilo";
+	E.config_path     = "/.config/epie";
 	E.mode            = 0;
 	E.cx              = 0;
 	E.cy              = 0;
@@ -1365,4 +1365,3 @@ int main(int argc, char *argv[]) {
 
 	quit();
 }
-

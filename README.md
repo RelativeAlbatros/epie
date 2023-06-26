@@ -1,13 +1,13 @@
-# Kilo
+# epie
 
-kilo is a terminal text editor in <1000 LoC that is similar to vi.
+epie is a terminal text editor that is similar to vi.
 
 ## Features
 
 - numberline
-- toml config file (default: ~/.config/kilo/settings.toml)
+- toml config file (default: ~/.config/epie/settings.toml)
 - Auto indent
- 
+
 ### Planned Features
 
 - Text selection
@@ -30,13 +30,12 @@ edit configuration file
 	$ meson build
 	$ cd build
 	$ meson compile
-	$ ./kilo
- 
+	$ ./epie
+
 ### Install
 
 	# meson install
 
 ## License
 
-The kilo source code is released under the BSD 2-Clause license.
-
+The epie source code is released under the BSD 2-Clause license.
