@@ -1,6 +1,6 @@
 # epie
 
-epie is a terminal text editor that is similar to vi.
+epie (as in e-pie) is a terminal text editor that is similar to vi.
 
 ## Features
 
@@ -25,7 +25,12 @@ edit configuration file
 		tab-stop = 4
 		separator = '|'
 
+## Requirements
+
+meson, compiler, (mingw for windows)
+
 ## Compile and Run
+
 
 	$ meson build
 	$ cd build

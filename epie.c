@@ -9,9 +9,14 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
+#ifndef _WIN32
+#	include <sys/ioctl.h>
+#	include <termios.h>
+#else
+#	include <windows.h>
+#   include "lib/termios.h"
+#endif
 #include <sys/types.h>
-#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -129,7 +134,9 @@ static void die(const char *s);
 static void disableRawMode();
 static void enableRawMode();
 static int editorReadKey();
+#ifndef _WIN32
 static int getCursorPosition(int *rows, int *cols);
+#endif
 static int getWindowSize(int *rows, int *cols);
 // syntax highlight
 static void editorUpdateSyntax(erow *row);
@@ -212,7 +219,7 @@ void die(const char *s) {
 
 void disableRawMode() {
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1)
-		die("tcsetattr");
+        return;
 }
 
 void enableRawMode() {
@@ -227,7 +234,7 @@ void enableRawMode() {
 	raw.c_cc[VMIN] = 0;
 	raw.c_cc[VTIME] = 1;
 
-	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
+	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) return;
 }
 
 int editorReadKey() {
@@ -282,6 +289,7 @@ int editorReadKey() {
 	}
 }
 
+#ifndef _WIN32
 int getCursorPosition(int *rows, int *cols) {
 	char buf[32];
 	unsigned int i = 0;
@@ -300,10 +308,13 @@ int getCursorPosition(int *rows, int *cols) {
 
 	return 0;
 }
+#endif
 
 int getWindowSize(int *rows, int *cols) {
+#ifndef WIN32
 	struct winsize ws;
 
+	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
 	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
 		if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
 		return getCursorPosition(rows, cols);
@@ -312,6 +323,15 @@ int getWindowSize(int *rows, int *cols) {
 		*rows = ws.ws_row;
 		return 0;
 	}
+#else
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    *cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+    *rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+
+    return 0;
+#endif
 }
 
 
@@ -704,7 +724,7 @@ void editorConfigSource() {
 
 void editorOpen(char *filename) {
 	free(E.filename);
-	E.filename = strdup(filename);
+    strcpy(E.filename, filename);
 	// ignore path starting with ./ and ../
 	while (*(E.filename + 1) == '/') E.filename += 2;
 	while (*(E.filename + 1) == '.') E.filename += 3;
