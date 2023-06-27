@@ -14,6 +14,7 @@ epie (as in e-pie) is a terminal text editor that is similar to vi.
 - Copy and paste
 - Soft wrap
 - Windows Support
+- Code Folding
 
 ## Configuration
 

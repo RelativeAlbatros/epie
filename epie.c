@@ -84,12 +84,14 @@ struct editorConfig {
 	unsigned short int message_timeout;
 	unsigned short int tab_stop;
 	char separator;
+	char *clipboard;
 	char statusmsg[80];
 	time_t statusmsg_time;
 	erow *row;
 	struct editorSyntax *syntax;
 	char *config_path;
 	// 0: normal, 1: input, 2: command, 3: search
+	// 4: selection
 	unsigned short int mode;
 	unsigned short int cx, cy;
 	unsigned short int rx;
@@ -163,6 +165,9 @@ static int editorSave();
 // find
 static void editorFindCallback(char *query, int key);
 static void editorFind();
+// selection
+static void editorYank(int prev_cx, int prev_cy);
+static void editorPaste();
 // output
 static void editorScroll();
 static void editorRefreshScreen();
@@ -497,7 +502,6 @@ void editorSelectSyntaxHighlight() {
 		}
 	}
 }
-
 
 int editorRowCxToRx(erow *row, int cx) {
 	int rx = 0;
@@ -870,6 +874,46 @@ void abFree(struct abuf *ab) {
 	free(ab->b);
 }
 
+void  editorYank(int prev_cx, int prev_cy) {
+	int nchars = 0;
+	free(E.clipboard);
+
+	int y = 0;
+	for (y = prev_cy; y <= E.cy; y++) {
+		erow *row = &E.row[y];
+		if (y == 0) {
+			nchars += row->size - prev_cx;
+		} else if (y == E.cy) {
+			nchars += E.cx;
+		} else {
+			nchars += row->size;
+		}
+	}
+	logger(1, "%d", nchars);
+	if ((E.clipboard = malloc(nchars * sizeof(char))) == NULL)
+		die("malloc");
+
+	y = 0;
+	for (y = prev_cy; y <= E.cy; y++) {
+		erow *row = &E.row[y];
+		if (y == 0) {
+			strncat(E.clipboard, &row->chars[prev_cx], row->size - prev_cx);
+		} else if (y == E.cy) {
+			strncat(E.clipboard, row->chars, E.cx);
+		} else {
+			strncat(E.clipboard, row->chars, row->size);
+		}
+	}
+}
+
+void editorPaste() {
+	size_t c;
+
+	if (E.clipboard == NULL) return;
+	for (c = 0; c < strlen(E.clipboard); c++)
+        editorInsertChar(E.clipboard[c]);
+}
+
 void editorScroll() {
 	E.rx = E.line_indent;
 	if (E.cy < E.numrows) {
@@ -988,6 +1032,7 @@ void editorDrawStatusBar(struct abuf *ab) {
 	else if (E.mode == 1) e_mode = "INSERT";
 	else if (E.mode == 2) e_mode = "COMMAND";
 	else if (E.mode == 3) e_mode = "SEARCH";
+	else if (E.mode == 4) e_mode = "VISUAL";
 	int len = snprintf(status, sizeof(status), " %s %c %.20s%s- %d",
 			e_mode , E.separator,
 			E.filename ? E.filename : "[No Name]",
@@ -1134,6 +1179,8 @@ void editorMoveCursor(int key) {
 
 void editorProcessKeypress() {
 	static int quit_times = EPIE_QUIT_TIMES;
+	int saved_cx = E.cx;
+	int saved_cy = E.cy;
 
 	int c = editorReadKey();
 
@@ -1194,6 +1241,14 @@ void editorProcessKeypress() {
 				editorRowDelChar(&E.row[E.cy], E.cx);
 				break;
 
+			case 'v': 
+				E.mode = 4;
+				break;
+
+		case 'p':
+			editorPaste();
+			break;
+
 			case 'r': {
 				int c = editorReadKey();
 				editorRowDelChar(&E.row[E.cy], E.cx);
@@ -1206,10 +1261,12 @@ void editorProcessKeypress() {
 				int c = editorReadKey();
 				if (c == 'd') {
 					editorDelRow(E.cy);
+					if (E.cy == E.numrows) editorMoveCursor(ARROW_UP);
 				} else if (c == 'k') {
 					editorDelRow(E.cy);
 					editorDelRow(E.cy - 1);
 					editorMoveCursor(ARROW_UP);
+					if (E.cy == E.numrows) editorMoveCursor(ARROW_UP);
 				} else if (c == 'j') {
 					editorDelRow(E.cy + 1);
 					editorDelRow(E.cy);
@@ -1218,6 +1275,7 @@ void editorProcessKeypress() {
 					editorMoveCursor(ARROW_LEFT);
 				} else if (c == 'h') {
 					editorRowDelChar(&E.row[E.cy], E.cx-1);
+					if (E.cy == E.numrows) editorMoveCursor(ARROW_UP);
 				} else if (c == 'w') {
 					while (E.row[E.cy].chars[E.cx] != ' ' && E.cx != E.row[E.cy].size)
 					editorRowDelChar(&E.row[E.cy], E.cx);
@@ -1295,6 +1353,15 @@ void editorProcessKeypress() {
 		}
 	} else if (E.mode == 1) {
 		switch (c) {
+			case 'j':
+				if (editorReadKey() == 'k') {
+					if (E.cx != 0) {
+						editorMoveCursor(ARROW_LEFT);
+						E.mode = 0;
+					}
+				}
+				break;
+
 			case CTRL_KEY('l'):
 			case '\x1b':
 				if (E.cx != 0) editorMoveCursor(ARROW_LEFT);
@@ -1332,6 +1399,31 @@ void editorProcessKeypress() {
 					editorInsertChar(c);
 				break;
 		}
+	} else if (E.mode == 4) {
+		switch (c) {
+			case '\x1b':
+				E.mode = 0;
+				break;
+
+			case 'h':
+			case 'j':
+			case 'k':
+			case 'l':
+			case ARROW_LEFT:
+			case ARROW_DOWN:
+			case ARROW_UP:
+			case ARROW_RIGHT:
+				editorMoveCursor(c);
+				break;
+
+			case 'y':
+				editorYank(saved_cx, saved_cy);
+				E.mode = 0;
+				break;
+
+			default:
+				break;
+		}
 	}
 
 	quit_times = EPIE_QUIT_TIMES;
@@ -1345,6 +1437,7 @@ void initEditor() {
 	E.message_timeout = 5;
 	E.tab_stop        = 4;
 	E.separator       = '|';
+	E.clipboard       = NULL;
 	E.statusmsg[0]    = '\0';
 	E.statusmsg_time  = 0;
 	E.row             = NULL;
