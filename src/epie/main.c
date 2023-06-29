@@ -20,6 +20,7 @@
 #include "output.h"
 #include "input.h"
 #include "find.h"
+#include "logger.h"
 
 int main(int argc, char *argv[]) {
 	enableRawMode();

@@ -1,4 +1,5 @@
 kilo
+.cache/
 tags*
 build/
 log.txt

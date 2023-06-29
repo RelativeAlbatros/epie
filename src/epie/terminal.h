@@ -25,7 +25,6 @@ enum editorKey {
 	PAGE_DOWN
 };
 
-
 void logger(const int tag, const char *msg, ...);
 void quit(void);
 void die(const char *s);

@@ -6,6 +6,8 @@
 #include "find.h"
 #include "output.h"
 #include "input.h"
+#include "terminal.h"
+#include "logger.h"
 
 char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
 	size_t bufsize = 128;
@@ -21,7 +23,7 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
 		int c = editorReadKey();
 		if (c == DEL_KEY || c == CTRL_KEY('h') || c == BACKSPACE) {
 			if(buflen != 0) buf[--buflen] = '\0';
-		}else if (c == '\x1b'){
+		} else if (c == '\x1b'){
 			editorSetStatusMessage("");
 			if (callback) callback(buf, c);
 			free(buf);
@@ -146,6 +148,12 @@ void editorProcessKeypress() {
 			case 'x':
 				editorRowDelChar(&E.row[E.cy], E.cx);
 				break;
+
+			case 'e': {
+				char *filename = editorPrompt("file: ", NULL);
+				logger(1, "%s", filename);
+				editorOpen(filename); break;
+			}
 
 			case 'r': {
 				int c = editorReadKey();
