@@ -9,24 +9,31 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _WIN32
+#ifndef WIN32
 #	include <sys/ioctl.h>
 #	include <termios.h>
 #else
 #	include <windows.h>
-#   include "lib/termios.h"
+#   include "../termios/termios.h"
 #endif
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
-#include "lib/toml.h"
+#include "../toml/toml.h"
 
 #define EPIE_VERSION "0.1.4"
 #define EPIE_QUIT_TIMES 3
 #define EPIE_LOG_PATH "/tmp/epie.log"
 
 #define CTRL_KEY(k) ((k) & 0x1f)
+
+enum editorMode {
+	NORMAL = 0,
+	INPUT,
+	COMMAND,
+	SEARCH
+};
 
 enum editorKey {
 	BACKSPACE = 127,
@@ -89,7 +96,6 @@ struct editorConfig {
 	erow *row;
 	struct editorSyntax *syntax;
 	char *config_path;
-	// 0: normal, 1: input, 2: command, 3: search
 	unsigned short int mode;
 	unsigned short int cx, cy;
 	unsigned short int rx;
@@ -836,7 +842,7 @@ void editorFind() {
 	int saved_rowoff = E.rowoff;
 	int saved_mode = E.mode;
 
-	E.mode = 3;
+	E.mode = SEARCH;
 	char *query = editorPrompt("/%s", editorFindCallback);
 	if (query) {
 		free(query);
@@ -984,10 +990,10 @@ void editorDrawStatusBar(struct abuf *ab) {
 
 	char status[80], rstatus[80];
 	char *e_mode;
-	if (E.mode == 0)	  e_mode = "NORMAL";
-	else if (E.mode == 1) e_mode = "INSERT";
-	else if (E.mode == 2) e_mode = "COMMAND";
-	else if (E.mode == 3) e_mode = "SEARCH";
+	if (E.mode == NORMAL)	    e_mode = "NORMAL";
+	else if (E.mode == INPUT)   e_mode = "INSERT";
+	else if (E.mode == COMMAND) e_mode = "COMMAND";
+	else if (E.mode == SEARCH)  e_mode = "SEARCH";
 	int len = snprintf(status, sizeof(status), " %s %c %.20s%s- %d",
 			e_mode , E.separator,
 			E.filename ? E.filename : "[No Name]",
@@ -1117,9 +1123,9 @@ void editorMoveCursor(int key) {
 			break;
 		case 'j':
 		case ARROW_DOWN:
-			if (E.mode == 1 && E.cy < E.numrows) {
+			if (E.mode == INPUT && E.cy < E.numrows) {
 				E.cy++;
-			} else if (E.mode == 0 && E.cy < E.numrows - 1) {
+			} else if (E.mode == NORMAL && E.cy < E.numrows - 1) {
 				E.cy++;
 			}
 			break;
@@ -1137,7 +1143,7 @@ void editorProcessKeypress() {
 
 	int c = editorReadKey();
 
-	if (E.mode == 0) {
+	if (E.mode == NORMAL) {
 		switch (c) {
 			case CTRL_KEY('q'):
 				if (E.dirty && quit_times > 0) {
@@ -1157,37 +1163,37 @@ void editorProcessKeypress() {
 				break;
 
 			case 'i':
-				E.mode = 1;
+				E.mode = INPUT;
 				break;
 
 			case 'I':
 				E.cx = 0;
-				E.mode = 1;
+				E.mode = INPUT;
 				break;
 
 			case 'a':
 				if (E.cx != 0) {
 					E.cx += 1;
 				}
-				E.mode = 1;
+				E.mode = INPUT;
 				break;
 
 			case 'A':
 				E.cx = E.row[E.cy].size;
-				E.mode = 1;
+				E.mode = INPUT;
 				break;
 
 			case 'o':
 				editorInsertRow(E.cy + 1, "", 0);
 				editorMoveCursor(ARROW_DOWN);
 				E.cx = 0;
-				E.mode = 1;
+				E.mode = INPUT;
 				break;
 
 			case 'O':
 				editorInsertRow(E.cy, "", 0);
 				E.cx = 0;
-				E.mode = 1;
+				E.mode = INPUT;
 				break;
 
 			case 'x':
@@ -1293,12 +1299,12 @@ void editorProcessKeypress() {
 			default:
 				break;
 		}
-	} else if (E.mode == 1) {
+	} else if (E.mode == INPUT) {
 		switch (c) {
 			case CTRL_KEY('l'):
 			case '\x1b':
 				if (E.cx != 0) editorMoveCursor(ARROW_LEFT);
-				E.mode = 0;
+				E.mode = NORMAL;
 				break;
 
 			case CTRL_KEY('q'):
@@ -1351,7 +1357,7 @@ void initEditor() {
 	E.syntax          = NULL;
 
 	E.config_path     = "/.config/epie";
-	E.mode            = 0;
+	E.mode            = NORMAL;
 	E.cx              = 0;
 	E.cy              = 0;
 	E.rx              = E.line_indent;
