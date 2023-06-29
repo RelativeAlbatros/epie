@@ -6,7 +6,7 @@ epie (as in e-pie) is a terminal text editor that is similar to vi.
 
 - Modal Editing
 - Numberline
-- toml config file (default: ~/.config/epie/settings.toml)
+- toml config file (default: *~/.config/epie/settings.toml* )
 - Auto indent
 
 ### Planned Features
@@ -30,7 +30,9 @@ edit configuration file
 
 ## Requirements
 
-meson, c compiler, (mingw, cygwin for windows)
+- POSIX compliant OS (currently no support for **Windows** and **MacOS**)
+- Meson
+- C compiler
 
 ## Compile and Run
 
