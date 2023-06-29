@@ -36,7 +36,7 @@ meson, c compiler, (mingw, cygwin for windows)
 
 	$ meson build
 	$ cd build
-	$ meson compile
+	$ meson compile --buildtype=release
 	$ ./epie
 
 ### Install
