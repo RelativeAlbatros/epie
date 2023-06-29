@@ -28,10 +28,9 @@ edit configuration file
 
 ## Requirements
 
-meson, compiler, (mingw for windows)
+meson, c compiler, (mingw, cygwin for windows)
 
 ## Compile and Run
-
 
 	$ meson build
 	$ cd build
