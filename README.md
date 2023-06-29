@@ -10,6 +10,7 @@ epie (as in e-pie) is a terminal text editor that is similar to vi.
 
 ### Planned Features
 
+- File Buffers
 - Text selection
 - Copy and paste
 - Soft wrap
@@ -28,10 +29,9 @@ edit configuration file
 
 ## Requirements
 
-meson, compiler, (mingw for windows)
+meson, c compiler, (mingw, cygwin for windows)
 
 ## Compile and Run
-
 
 	$ meson build
 	$ cd build
