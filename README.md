@@ -1,6 +1,6 @@
 # epie
 
-epie (as in e-pie) is a terminal text editor that is similar to vi.
+epie (as in e-pie) is a vim-like modal text editor for POSIX terminal.
 
 ## Features
 
@@ -30,7 +30,7 @@ edit configuration file
 
 ## Requirements
 
-- POSIX compliant OS (currently no support for **Windows** and **MacOS**)
+- POSIX compliant OS (currently no support for Windows and MacOS)
 - Meson
 - C compiler
 
