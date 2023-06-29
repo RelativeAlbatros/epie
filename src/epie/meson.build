@@ -1,1 +1,2 @@
-sources += files('main.c', 'terminal.c', 'editor.c', 'highlight.c',)
+sources += files('main.c', 'terminal.c', 'erow.c',
+      'editor.c', 'highlight.c',)
