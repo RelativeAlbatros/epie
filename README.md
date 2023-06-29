@@ -4,7 +4,8 @@ epie (as in e-pie) is a terminal text editor that is similar to vi.
 
 ## Features
 
-- numberline
+- Modal Editing
+- Numberline
 - toml config file (default: ~/.config/epie/settings.toml)
 - Auto indent
 
