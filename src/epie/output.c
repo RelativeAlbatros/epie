@@ -17,7 +17,7 @@ void editorDrawRows(struct abuf *ab) {
 			if (E.numrows == 0 && y == E.screenrows / 3) {
 				char welcome[80];
 				int welcomelen = snprintf(welcome, sizeof(welcome),
-				"epie editor -- version %s", EPIE_VERSION);
+				"epie editor");
 				if (welcomelen > E.screencols) welcomelen = E.screencols;
 				int padding = (E.screencols - welcomelen) / 2;
 				if (padding) {
@@ -32,7 +32,7 @@ void editorDrawRows(struct abuf *ab) {
 				abAppend(ab, welcome, welcomelen);
 			} else {
 				abAppend(ab, "\x1b[90m", 5);
-				for (int pad=0; pad<E.line_indent-2; pad++) abAppend(ab, " ", 1);
+				for (int pad=0; pad < E.line_indent-2; pad++) abAppend(ab, " ", 1);
 				abAppend(ab, "~", 1);
 				abAppend(ab, " ", 1);
 				abAppend(ab, "\x1b[m", 3);
@@ -42,7 +42,10 @@ void editorDrawRows(struct abuf *ab) {
 				char rcol[80];
 				E.line_indent = snprintf(rcol, sizeof(rcol), " %*d ",
 						E.numberlen, filerow + 1);
-				abAppend(ab, "\x1b[90m", 5);
+				if (y == E.cy)
+					abAppend(ab, "\x1b[1m", 4);
+				else
+					abAppend(ab, "\x1b[90m", 5);
 				abAppend(ab, rcol, E.line_indent);
 				abAppend(ab, "\x1b[m", 3);
 			} else {
@@ -99,7 +102,7 @@ void editorDrawRows(struct abuf *ab) {
 }
 
 void editorDrawStatusBar(struct abuf *ab) {
-	abAppend(ab, "\x1b[40m", 5);
+	abAppend(ab, "\x1b[7m", 4);
 
 	char status[80], rstatus[80];
 	char *e_mode;
