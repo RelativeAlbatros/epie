@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "erow.h"
 #include "highlight.h"
 #include "editor.h"
 

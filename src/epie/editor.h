@@ -1,6 +1,8 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
+#define EPIE_VERSION "0.1.4"
+
 #include <time.h>
 
 #include "terminal.h"
@@ -41,5 +43,8 @@ struct editorConfig {
 extern struct editorConfig E;
 
 void initEditor(void);
+void editorInsertChar(int c);
+void editorInsertNewLine();
+void editorDelChar();
 
 #endif
