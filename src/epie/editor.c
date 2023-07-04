@@ -1,9 +1,13 @@
-#include "terminal.h"
-
 #include "editor.h"
 
 struct editorConfig E;
 
+int last_input_char = 0;
+
+void die(const char *msg) {
+	perror(msg);
+	exit(1);
+}
 void initEditor(void) {
 	E.number          = 1;
 	E.numberlen       = 4;
@@ -27,7 +31,6 @@ void initEditor(void) {
 	E.dirty           = 0;
 	E.filename        = NULL;
 
-	if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 	E.screenrows -= 2;
 }
 

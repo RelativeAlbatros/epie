@@ -4,15 +4,16 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "terminal.h"
-
 #define EPIE_LOG_PATH "/tmp/epie.log"
 
 void logger(const int tag, const char *msg, ...) {
 	va_list args;
 	va_start(args, msg);
 	FILE *log = fopen(EPIE_LOG_PATH, "a");
-	if (log == NULL) die("log");
+	if (log == NULL) {
+		perror("log");
+		exit(1);
+	}
 	char message[256];
 	char tag_type[16];
 	time_t now;

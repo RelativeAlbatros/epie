@@ -5,8 +5,20 @@
 
 #include <time.h>
 
-#include "terminal.h"
 #include "erow.h"
+
+enum editorKey {
+	BACKSPACE = 127,
+	ARROW_LEFT = 1000,
+	ARROW_RIGHT,
+	ARROW_UP,
+	ARROW_DOWN,
+	DEL_KEY,
+	HOME_KEY,
+	END_KEY,
+	PAGE_UP,
+	PAGE_DOWN
+};
 
 enum editorMode {
 	NORMAL = 0,
@@ -37,11 +49,13 @@ struct editorConfig {
 	unsigned short int numrows;
 	unsigned short int dirty;
 	char *filename;
-	struct termios orig_termios;
 };
 
 extern struct editorConfig E;
 
+extern int last_input_char;
+
+void die(const char*);
 void initEditor(void);
 void editorInsertChar(int c);
 void editorInsertNewLine();

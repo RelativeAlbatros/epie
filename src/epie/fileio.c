@@ -7,10 +7,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #include "../toml/toml.h"
 #include "editor.h"
-#include "fileio.h"
 #include "highlight.h"
 #include "input.h"
 #include "output.h"

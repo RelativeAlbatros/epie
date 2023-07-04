@@ -4,6 +4,6 @@ project('epie', 'c',
 
 sources = []
 subdir('src')
-
-add_project_arguments('-Wno-unused-function', '-Isrc/toml/', '-Isrc/termios/', language : 'c')
-executable('epie', sources, install : true)
+ncurses = dependency('ncurses', required: true)
+add_project_arguments('-Wno-unused-function', '-Isrc/toml/', '-Isrc/termios/', '-lncurses', language : 'c')
+executable('epie', sources, dependencies: ncurses, install : true)

@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <ctype.h>
+#include <ncurses.h>
 
 #include "fileio.h"
 #include "editor.h"
 #include "find.h"
 #include "output.h"
 #include "input.h"
-#include "terminal.h"
 #include "logger.h"
 
 char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
@@ -20,7 +20,7 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
 		editorSetStatusMessage(prompt, buf);
 		editorRefreshScreen();
 
-		int c = editorReadKey();
+		int c = getch();
 		if (c == DEL_KEY || c == CTRL_KEY('h') || c == BACKSPACE) {
 			if(buflen != 0) buf[--buflen] = '\0';
 		} else if (c == '\x1b'){
@@ -90,7 +90,7 @@ void editorMoveCursor(int key) {
 void editorProcessKeypress() {
 	static int quit_times = EPIE_QUIT_TIMES;
 
-	int c = editorReadKey();
+	int c = getch();
 
 	if (E.mode == NORMAL) {
 		switch (c) {
@@ -100,7 +100,7 @@ void editorProcessKeypress() {
 					quit_times--;
 				return;
 				}
-				quit();
+				exit(0);
 				break;
 
 			case CTRL_KEY('s'):
@@ -156,7 +156,7 @@ void editorProcessKeypress() {
 			}
 
 			case 'r': {
-				int c = editorReadKey();
+				int c = getch();
 				editorRowDelChar(&E.row[E.cy], E.cx);
 				editorInsertChar(c);
 				editorMoveCursor(ARROW_LEFT);
@@ -164,7 +164,7 @@ void editorProcessKeypress() {
 			}
 
 			case 'd': {
-				int c = editorReadKey();
+				int c = getch();
 				if (c == 'd') {
 					editorDelRow(E.cy);
 				} else if (c == 'k') {
@@ -268,7 +268,7 @@ void editorProcessKeypress() {
 					quit_times--;
 					return;
 				}
-				quit();
+				exit(0);
 				break;
 
 			case DEL_KEY:

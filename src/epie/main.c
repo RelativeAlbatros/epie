@@ -11,8 +11,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <ncurses.h>
 
-#include "terminal.h"
 #include "erow.h"
 #include "editor.h"
 #include "highlight.h"
@@ -23,7 +23,7 @@
 #include "logger.h"
 
 int main(int argc, char *argv[]) {
-	enableRawMode();
+	initscr();
 	initEditor();
 	editorConfigSource();
 
@@ -38,5 +38,6 @@ int main(int argc, char *argv[]) {
 		editorProcessKeypress();
 	}
 
-	quit();
+	endwin();
+	return 0;
 }
